@@ -36,7 +36,7 @@ class CompanyController extends Controller
         $sortDirection = $request->input('direction', 'asc');
         
         // Validate sort field to prevent SQL injection
-        $allowedSortFields = ['company_name', 'city_or_region'];
+        $allowedSortFields = ['company_name', 'city_or_region', 'contacts_count'];
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection === 'desc' ? 'desc' : 'asc');
         } else {

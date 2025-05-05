@@ -68,11 +68,13 @@ const SortHeader = ({ field, label, currentSortField, currentSortDirection, onSo
       ? <ArrowUp className="ml-1 h-4 w-4" />
       : <ArrowDown className="ml-1 h-4 w-4" />
     : <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
+    
+  const isContactsColumn = field === 'contacts_count';
 
   return (
-    <th className="px-4 py-3">
+    <th className={`px-4 py-3 ${isContactsColumn ? 'text-center' : ''}`}>
       <button
-        className="inline-flex items-center text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+        className={`inline-flex items-center text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ${isContactsColumn ? 'justify-center' : ''}`}
         onClick={() => onSort(field)}
       >
         {label}
@@ -151,7 +153,13 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
               <thead>
                 <tr className="border-b bg-neutral-50 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
                   <th className="px-4 py-3">Actions</th>
-                  <th className="px-4 py-3">Contacts</th>
+                  <SortHeader
+                    field="contacts_count"
+                    label="Contacts"
+                    currentSortField={sort.field}
+                    currentSortDirection={sort.direction}
+                    onSort={handleSort}
+                  />
                   <th className="px-4 py-3">Manufacturer</th>
                   <SortHeader
                     field="company_name"
