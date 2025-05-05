@@ -1,9 +1,9 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Users } from 'lucide-react';
+import { UserPlus, Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CompanyFilters } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/ui/pagination';
@@ -47,7 +47,40 @@ interface CompaniesIndexProps {
     cities: string[];
     states: string[];
   };
+  sort: {
+    field: string;
+    direction: string;
+  };
 }
+
+interface SortHeaderProps {
+  field: string;
+  label: string;
+  currentSortField: string;
+  currentSortDirection: string;
+  onSort: (field: string) => void;
+}
+
+const SortHeader = ({ field, label, currentSortField, currentSortDirection, onSort }: SortHeaderProps) => {
+  const isActive = currentSortField === field;
+  const icon = isActive
+    ? currentSortDirection === 'asc'
+      ? <ArrowUp className="ml-1 h-4 w-4" />
+      : <ArrowDown className="ml-1 h-4 w-4" />
+    : <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
+
+  return (
+    <th className="px-4 py-3">
+      <button
+        className="inline-flex items-center text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+        onClick={() => onSort(field)}
+      >
+        {label}
+        {icon}
+      </button>
+    </th>
+  );
+};
 
 // Function to convert text to title case
 function toTitleCase(text: string): string {
@@ -69,7 +102,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-export default function CompaniesIndex({ companies, filters, filterOptions }: CompaniesIndexProps) {
+export default function CompaniesIndex({ companies, filters, filterOptions, sort }: CompaniesIndexProps) {
   // Memoize filter props to prevent unnecessary re-renders
   const initialFilters = useMemo(() => ({
     search: filters.search || '',
@@ -81,6 +114,25 @@ export default function CompaniesIndex({ companies, filters, filterOptions }: Co
     cities: filterOptions.cities,
     states: filterOptions.states,
   }), [filterOptions.cities, filterOptions.states]);
+
+  // Handle sorting
+  const handleSort = (field: string) => {
+    const direction = sort.field === field && sort.direction === 'asc' ? 'desc' : 'asc';
+    
+    router.get(
+      route('companies.index'),
+      {
+        ...filters,
+        sort: field,
+        direction,
+      },
+      {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['companies', 'sort'],
+      }
+    );
+  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -101,8 +153,20 @@ export default function CompaniesIndex({ companies, filters, filterOptions }: Co
                   <th className="px-4 py-3">Actions</th>
                   <th className="px-4 py-3">Contacts</th>
                   <th className="px-4 py-3">Manufacturer</th>
-                  <th className="px-4 py-3">Company Name</th>
-                  <th className="px-4 py-3">City/Region</th>
+                  <SortHeader
+                    field="company_name"
+                    label="Company Name"
+                    currentSortField={sort.field}
+                    currentSortDirection={sort.direction}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    field="city_or_region"
+                    label="City/Region"
+                    currentSortField={sort.field}
+                    currentSortDirection={sort.direction}
+                    onSort={handleSort}
+                  />
                   <th className="px-4 py-3">State</th>
                   <th className="px-4 py-3">Zip Code</th>
                   <th className="px-4 py-3">Email</th>
@@ -198,7 +262,7 @@ export default function CompaniesIndex({ companies, filters, filterOptions }: Co
                 links={companies.links}
                 preserveScroll={true}
                 preserveState={true}
-                only={['companies']}
+                only={['companies', 'sort']}
               />
             </div>
           )}

@@ -31,6 +31,19 @@ class CompanyController extends Controller
             $query->where('state', $request->state);
         }
         
+        // Apply sorting
+        $sortField = $request->input('sort', 'company_name');
+        $sortDirection = $request->input('direction', 'asc');
+        
+        // Validate sort field to prevent SQL injection
+        $allowedSortFields = ['company_name', 'city_or_region'];
+        if (in_array($sortField, $allowedSortFields)) {
+            $query->orderBy($sortField, $sortDirection === 'desc' ? 'desc' : 'asc');
+        } else {
+            // Default sorting
+            $query->orderBy('company_name', 'asc');
+        }
+        
         // Paginate the results - 10 per page or use a configurable value
         $perPage = $request->input('per_page', 10);
         $companies = $query->paginate($perPage)->withQueryString();
@@ -58,6 +71,10 @@ class CompanyController extends Controller
             'filterOptions' => [
                 'cities' => $cities,
                 'states' => $states,
+            ],
+            'sort' => [
+                'field' => $sortField,
+                'direction' => $sortDirection,
             ],
         ]);
     }
