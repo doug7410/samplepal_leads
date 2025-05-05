@@ -35,6 +35,18 @@ class ContactController extends Controller
     }
 
     /**
+     * Toggle the has_been_contacted status for a contact.
+     */
+    public function toggleContacted($id)
+    {
+        $contact = Contact::findOrFail($id);
+        $contact->has_been_contacted = !$contact->has_been_contacted;
+        $contact->save();
+        
+        return redirect()->back();
+    }
+    
+    /**
      * Store a newly created contact in storage.
      */
     public function store(Request $request)
@@ -46,6 +58,7 @@ class ContactController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
+            'has_been_contacted' => 'boolean',
         ]);
 
         Contact::create($validated);

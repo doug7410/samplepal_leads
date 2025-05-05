@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormEvent } from 'react';
 
 interface ContactCreateProps {
@@ -34,6 +35,7 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
     email: '',
     phone: '',
     job_title: '',
+    has_been_contacted: false,
   });
 
   const handleSubmit = (e: FormEvent) => {
@@ -114,6 +116,16 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                   onChange={e => setData('job_title', e.target.value)}
                 />
                 {errors.job_title && <p className="text-sm text-red-500">{errors.job_title}</p>}
+              </div>
+              
+              <div className="flex items-center space-x-2 md:col-span-2">
+                <Checkbox 
+                  id="has_been_contacted" 
+                  checked={data.has_been_contacted}
+                  onCheckedChange={value => setData('has_been_contacted', Boolean(value))}
+                />
+                <Label htmlFor="has_been_contacted" className="cursor-pointer">Has been contacted</Label>
+                {errors.has_been_contacted && <p className="text-sm text-red-500">{errors.has_been_contacted}</p>}
               </div>
             </div>
             

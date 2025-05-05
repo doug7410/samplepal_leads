@@ -22,6 +22,16 @@ class Contact extends Model
         'email',
         'phone',
         'job_title',
+        'has_been_contacted',
+    ];
+    
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'has_been_contacted' => 'boolean',
     ];
 
     /**

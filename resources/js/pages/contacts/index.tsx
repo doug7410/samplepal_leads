@@ -1,8 +1,9 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, UserPlus } from 'lucide-react';
 
 interface Company {
@@ -18,6 +19,7 @@ interface Contact {
   email: string | null;
   phone: string | null;
   job_title: string | null;
+  has_been_contacted: boolean;
   created_at: string;
   updated_at: string;
   company: Company;
@@ -64,6 +66,7 @@ export default function ContactsIndex({ contacts }: ContactsIndexProps) {
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Job Title</th>
                   <th className="px-4 py-3">Company</th>
+                  <th className="px-4 py-3">Contacted</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -102,12 +105,21 @@ export default function ContactsIndex({ contacts }: ContactsIndexProps) {
                         {contact.company?.company_name || '-'}
                       </Link>
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <Checkbox 
+                        checked={contact.has_been_contacted}
+                        onCheckedChange={() => {
+                          // Use Inertia's router to make the POST request with CSRF protection
+                          router.post(route('contacts.toggle-contacted', { id: contact.id }));
+                        }}
+                      />
+                    </td>
                   </tr>
                 ))}
                 
                 {contacts.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-neutral-500">
+                    <td colSpan={7} className="px-4 py-6 text-center text-neutral-500">
                       No contacts found
                     </td>
                   </tr>
