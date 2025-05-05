@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Users } from 'lucide-react';
 
 interface Company {
   id: number;
@@ -74,7 +74,13 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                       </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-center">
-                      {company.contacts_count || 0}
+                      <Link 
+                        href={route('contacts.index', { company_id: company.id })}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        <Users size={14} />
+                        <span>{company.contacts_count || 0}</span>
+                      </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm capitalize">{company.manufacturer}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">{company.company_name}</td>
