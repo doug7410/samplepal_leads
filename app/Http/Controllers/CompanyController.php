@@ -15,9 +15,10 @@ class CompanyController extends Controller
     {
         $query = Company::withCount('contacts');
         
-        // Apply company name search filter if provided
+        // Apply company name search filter if provided - case insensitive
         if ($request->has('search') && !empty($request->search)) {
-            $query->where('company_name', 'LIKE', '%' . $request->search . '%');
+            $searchTerm = strtolower($request->search);
+            $query->whereRaw('LOWER(company_name) LIKE ?', ['%' . $searchTerm . '%']);
         }
         
         // Apply city filter if provided
@@ -30,7 +31,9 @@ class CompanyController extends Controller
             $query->where('state', $request->state);
         }
         
-        $companies = $query->get();
+        // Paginate the results - 10 per page or use a configurable value
+        $perPage = $request->input('per_page', 10);
+        $companies = $query->paginate($perPage)->withQueryString();
         
         // Get unique cities and states for filter dropdowns
         $cities = Company::distinct('city_or_region')
