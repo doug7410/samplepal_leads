@@ -1,7 +1,9 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
 
 interface Company {
   id: number;
@@ -52,6 +54,7 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                   <th className="px-4 py-3">Zip Code</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Website</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -89,12 +92,20 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                         '-'
                       )}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <Link href={route('contacts.create', { company_id: company.id })}>
+                        <Button size="sm" variant="ghost" className="flex items-center gap-1">
+                          <UserPlus size={16} />
+                          <span>Add Contact</span>
+                        </Button>
+                      </Link>
+                    </td>
                   </tr>
                 ))}
                 
                 {companies.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
+                    <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
                       No companies found
                     </td>
                   </tr>
