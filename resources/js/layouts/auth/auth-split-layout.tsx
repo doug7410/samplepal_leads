@@ -1,4 +1,3 @@
-import AppLogoIcon from '@/components/app-logo-icon';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
@@ -16,7 +15,14 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
             <div className="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
                 <div className="absolute inset-0 bg-zinc-900" />
                 <Link href={route('home')} className="relative z-20 flex items-center text-lg font-medium">
-                    <AppLogoIcon className="mr-2 size-8 fill-current text-white" />
+                    <div className="flex items-center justify-center overflow-visible mr-2 h-8 w-8">
+                        <img 
+                            src="/logo_no_padding.svg" 
+                            alt="Samplepal Leads Logo" 
+                            className="h-7 w-7 object-contain" 
+                            style={{ transform: 'scale(1.8)' }}
+                        />
+                    </div>
                     {name}
                 </Link>
                 {quote && (
@@ -31,7 +37,14 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
             <div className="w-full lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                     <Link href={route('home')} className="relative z-20 flex items-center justify-center lg:hidden">
-                        <AppLogoIcon className="h-10 fill-current text-black sm:h-12" />
+                        <div className="flex items-center justify-center overflow-visible h-10 sm:h-12">
+                            <img 
+                                src="/logo_no_padding.svg" 
+                                alt="Samplepal Leads Logo" 
+                                className="h-9 w-9 sm:h-10 sm:w-10 object-contain" 
+                                style={{ transform: 'scale(1.8)' }}
+                            />
+                        </div>
                     </Link>
                     <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
                         <h1 className="text-xl font-medium">{title}</h1>
