@@ -43,6 +43,7 @@ class ContactController extends Controller
         return Inertia::render('contacts/create', [
             'company_id' => $company_id,
             'company' => $company,
+            'errors' => session()->get('errors') ? session()->get('errors')->getBag('default')->getMessages() : (object)[],
         ]);
     }
 
@@ -71,6 +72,7 @@ class ContactController extends Controller
             'phone' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
             'has_been_contacted' => 'boolean',
+            'notes' => 'nullable|string',
         ]);
 
         Contact::create($validated);
@@ -90,6 +92,7 @@ class ContactController extends Controller
         return Inertia::render('contacts/edit', [
             'contact' => $contact,
             'companies' => $companies,
+            'errors' => session()->get('errors') ? session()->get('errors')->getBag('default')->getMessages() : (object)[],
         ]);
     }
     
@@ -108,6 +111,7 @@ class ContactController extends Controller
             'phone' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
             'has_been_contacted' => 'boolean',
+            'notes' => 'nullable|string',
         ]);
         
         $contact->update($validated);

@@ -1,15 +1,17 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormEvent } from 'react';
+import { NotesField } from '@/components/notes-field';
+import { FormEvent, useState, useCallback } from 'react';
 
 interface ContactCreateProps {
   company_id: number;
+  errors?: Record<string, string>;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -27,8 +29,9 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-export default function ContactCreate({ company_id }: ContactCreateProps) {
-  const { data, setData, post, processing, errors } = useForm({
+export default function ContactCreate({ company_id, errors = {} }: ContactCreateProps) {
+  // Use React's useState instead of Inertia's useForm
+  const [formData, setFormData] = useState({
     company_id: company_id,
     first_name: '',
     last_name: '',
@@ -36,11 +39,36 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
     phone: '',
     job_title: '',
     has_been_contacted: false,
+    notes: '',
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Handle text input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle checkbox changes
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      has_been_contacted: checked,
+    }));
+  };
+
+  // Handle form submission with Inertia
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    post(route('contacts.store'));
+    setIsSubmitting(true);
+    
+    router.post(route('contacts.store'), formData, {
+      onFinish: () => setIsSubmitting(false),
+    });
   };
 
   return (
@@ -64,8 +92,8 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                 <Input
                   id="first_name"
                   name="first_name"
-                  value={data.first_name}
-                  onChange={e => setData('first_name', e.target.value)}
+                  value={formData.first_name}
+                  onChange={handleInputChange}
                   required
                   autoFocus
                 />
@@ -77,8 +105,8 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                 <Input
                   id="last_name"
                   name="last_name"
-                  value={data.last_name}
-                  onChange={e => setData('last_name', e.target.value)}
+                  value={formData.last_name}
+                  onChange={handleInputChange}
                   required
                 />
                 {errors.last_name && <p className="text-sm text-red-500">{errors.last_name}</p>}
@@ -90,8 +118,8 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                   id="email"
                   name="email"
                   type="email"
-                  value={data.email}
-                  onChange={e => setData('email', e.target.value)}
+                  value={formData.email}
+                  onChange={handleInputChange}
                 />
                 {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
               </div>
@@ -101,8 +129,8 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                 <Input
                   id="phone"
                   name="phone"
-                  value={data.phone}
-                  onChange={e => setData('phone', e.target.value)}
+                  value={formData.phone}
+                  onChange={handleInputChange}
                 />
                 {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
               </div>
@@ -112,17 +140,33 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
                 <Input
                   id="job_title"
                   name="job_title"
-                  value={data.job_title}
-                  onChange={e => setData('job_title', e.target.value)}
+                  value={formData.job_title}
+                  onChange={handleInputChange}
                 />
                 {errors.job_title && <p className="text-sm text-red-500">{errors.job_title}</p>}
+              </div>
+              
+              <div className="md:col-span-2">
+                <NotesField
+                  initialValue={formData.notes}
+                  onValueChange={(value) => {
+                    // Only update form data on debounced change events
+                    setFormData(prev => ({
+                      ...prev,
+                      notes: value,
+                    }));
+                  }}
+                  error={errors.notes}
+                  placeholder="Add any notes about this contact here..."
+                  rows={6}
+                />
               </div>
               
               <div className="flex items-center space-x-2 md:col-span-2">
                 <Checkbox 
                   id="has_been_contacted" 
-                  checked={data.has_been_contacted}
-                  onCheckedChange={value => setData('has_been_contacted', Boolean(value))}
+                  checked={formData.has_been_contacted}
+                  onCheckedChange={handleCheckboxChange}
                 />
                 <Label htmlFor="has_been_contacted" className="cursor-pointer">Has been contacted</Label>
                 {errors.has_been_contacted && <p className="text-sm text-red-500">{errors.has_been_contacted}</p>}
@@ -133,7 +177,7 @@ export default function ContactCreate({ company_id }: ContactCreateProps) {
               <Link href={route('companies.index')}>
                 <Button variant="outline" type="button">Cancel</Button>
               </Link>
-              <Button type="submit" disabled={processing}>Create Contact</Button>
+              <Button type="submit" disabled={isSubmitting}>Create Contact</Button>
             </div>
           </form>
         </Card>

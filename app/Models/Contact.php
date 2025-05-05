@@ -23,6 +23,7 @@ class Contact extends Model
         'phone',
         'job_title',
         'has_been_contacted',
+        'notes',
     ];
     
     /**

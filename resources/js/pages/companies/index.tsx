@@ -4,6 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserPlus, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Company {
   id: number;
@@ -22,6 +23,15 @@ interface Company {
 
 interface CompaniesIndexProps {
   companies: Company[];
+}
+
+// Function to convert text to title case
+function toTitleCase(text: string): string {
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,11 +61,11 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                   <th className="px-4 py-3">Contacts</th>
                   <th className="px-4 py-3">Manufacturer</th>
                   <th className="px-4 py-3">Company Name</th>
-                  <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">City/Region</th>
                   <th className="px-4 py-3">State</th>
                   <th className="px-4 py-3">Zip Code</th>
                   <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Website</th>
                 </tr>
               </thead>
@@ -83,13 +93,8 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                       </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm capitalize">{company.manufacturer}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">{company.company_name}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {company.company_phone 
-                        ? company.company_phone.split(' EXT')[0].split(' x')[0].split(' ext')[0]
-                        : '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">{company.city_or_region || '-'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">{toTitleCase(company.company_name)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">{company.city_or_region ? toTitleCase(company.city_or_region) : '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">{company.state || '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       {company.zip_code 
@@ -97,6 +102,11 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                         : '-'}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">{company.email || '-'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      {company.company_phone 
+                        ? company.company_phone.split(' EXT')[0].split(' x')[0].split(' ext')[0]
+                        : '-'}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       {company.website ? (
                         <a 

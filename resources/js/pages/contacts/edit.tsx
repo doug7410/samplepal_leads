@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue 
 } from '@/components/ui/select';
-import { FormEvent } from 'react';
+import { NotesField } from '@/components/notes-field'; 
+import { FormEvent, useState, useCallback, Fragment } from 'react';
 
 interface Company {
   id: number;
@@ -29,15 +30,66 @@ interface Contact {
   phone: string | null;
   job_title: string | null;
   has_been_contacted: boolean;
+  notes: string | null;
   company: Company;
 }
 
 interface ContactEditProps {
   contact: Contact;
   companies: Company[];
+  errors?: Record<string, string>;
 }
 
-export default function ContactEdit({ contact, companies }: ContactEditProps) {
+export default function ContactEdit({ contact, companies, errors = {} }: ContactEditProps) {
+  // Use React's useState instead of Inertia's useForm
+  const [formData, setFormData] = useState({
+    company_id: contact.company_id,
+    first_name: contact.first_name,
+    last_name: contact.last_name,
+    email: contact.email || '',
+    phone: contact.phone || '',
+    job_title: contact.job_title || '',
+    has_been_contacted: contact.has_been_contacted,
+    notes: contact.notes || '',
+  });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle text input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle checkbox changes
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      has_been_contacted: checked,
+    }));
+  };
+
+  // Handle company select changes
+  const handleCompanyChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      company_id: parseInt(value, 10),
+    }));
+  };
+
+  // Handle form submission with Inertia
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    router.put(route('contacts.update', contact.id), formData, {
+      onFinish: () => setIsSubmitting(false),
+    });
+  };
+
   const breadcrumbs: BreadcrumbItem[] = [
     {
       title: 'Dashboard',
@@ -52,25 +104,6 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
       href: '#',
     },
   ];
-
-  const { data, setData, put, processing, errors } = useForm({
-    company_id: contact.company_id,
-    first_name: contact.first_name,
-    last_name: contact.last_name,
-    email: contact.email || '',
-    phone: contact.phone || '',
-    job_title: contact.job_title || '',
-    has_been_contacted: contact.has_been_contacted,
-  });
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    put(route('contacts.update', contact.id));
-  };
-
-  const handleCompanyChange = (value: string) => {
-    setData('company_id', parseInt(value, 10));
-  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -89,7 +122,7 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="company_id">Company</Label>
                 <Select 
-                  value={data.company_id.toString()} 
+                  value={formData.company_id.toString()} 
                   onValueChange={handleCompanyChange}
                 >
                   <SelectTrigger id="company_id">
@@ -111,8 +144,8 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
                 <Input
                   id="first_name"
                   name="first_name"
-                  value={data.first_name}
-                  onChange={e => setData('first_name', e.target.value)}
+                  value={formData.first_name}
+                  onChange={handleInputChange}
                   required
                   autoFocus
                 />
@@ -124,8 +157,8 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
                 <Input
                   id="last_name"
                   name="last_name"
-                  value={data.last_name}
-                  onChange={e => setData('last_name', e.target.value)}
+                  value={formData.last_name}
+                  onChange={handleInputChange}
                   required
                 />
                 {errors.last_name && <p className="text-sm text-red-500">{errors.last_name}</p>}
@@ -137,8 +170,8 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
                   id="email"
                   name="email"
                   type="email"
-                  value={data.email}
-                  onChange={e => setData('email', e.target.value)}
+                  value={formData.email}
+                  onChange={handleInputChange}
                 />
                 {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
               </div>
@@ -148,8 +181,8 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
                 <Input
                   id="phone"
                   name="phone"
-                  value={data.phone}
-                  onChange={e => setData('phone', e.target.value)}
+                  value={formData.phone}
+                  onChange={handleInputChange}
                 />
                 {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
               </div>
@@ -159,17 +192,33 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
                 <Input
                   id="job_title"
                   name="job_title"
-                  value={data.job_title}
-                  onChange={e => setData('job_title', e.target.value)}
+                  value={formData.job_title}
+                  onChange={handleInputChange}
                 />
                 {errors.job_title && <p className="text-sm text-red-500">{errors.job_title}</p>}
+              </div>
+              
+              <div className="md:col-span-2">
+                <NotesField
+                  initialValue={formData.notes}
+                  onValueChange={(value) => {
+                    // Only update form data on debounced change events
+                    setFormData(prev => ({
+                      ...prev,
+                      notes: value,
+                    }));
+                  }}
+                  error={errors.notes}
+                  placeholder="Add any notes about this contact here..."
+                  rows={6}
+                />
               </div>
               
               <div className="flex items-center space-x-2 md:col-span-2">
                 <Checkbox 
                   id="has_been_contacted" 
-                  checked={data.has_been_contacted}
-                  onCheckedChange={value => setData('has_been_contacted', Boolean(value))}
+                  checked={formData.has_been_contacted}
+                  onCheckedChange={handleCheckboxChange}
                 />
                 <Label htmlFor="has_been_contacted" className="cursor-pointer">Has been contacted</Label>
                 {errors.has_been_contacted && <p className="text-sm text-red-500">{errors.has_been_contacted}</p>}
@@ -180,7 +229,7 @@ export default function ContactEdit({ contact, companies }: ContactEditProps) {
               <Link href={route('contacts.index')}>
                 <Button variant="outline" type="button">Cancel</Button>
               </Link>
-              <Button type="submit" disabled={processing}>Save Changes</Button>
+              <Button type="submit" disabled={isSubmitting}>Save Changes</Button>
             </div>
           </form>
         </Card>
