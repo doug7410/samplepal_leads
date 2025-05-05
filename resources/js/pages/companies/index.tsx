@@ -15,6 +15,7 @@ interface Company {
   zip_code: string | null;
   email: string | null;
   website: string | null;
+  contacts_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +47,8 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-neutral-50 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
+                  <th className="px-4 py-3">Actions</th>
+                  <th className="px-4 py-3">Contacts</th>
                   <th className="px-4 py-3">Manufacturer</th>
                   <th className="px-4 py-3">Company Name</th>
                   <th className="px-4 py-3">Phone</th>
@@ -54,7 +57,6 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                   <th className="px-4 py-3">Zip Code</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Website</th>
-                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -63,6 +65,17 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                     key={company.id} 
                     className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <Link href={route('contacts.create', { company_id: company.id })}>
+                        <Button size="sm" variant="ghost" className="flex items-center gap-1">
+                          <UserPlus size={16} />
+                          <span>Add Contact</span>
+                        </Button>
+                      </Link>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-center">
+                      {company.contacts_count || 0}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm capitalize">{company.manufacturer}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">{company.company_name}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -92,20 +105,12 @@ export default function CompaniesIndex({ companies }: CompaniesIndexProps) {
                         '-'
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <Link href={route('contacts.create', { company_id: company.id })}>
-                        <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                          <UserPlus size={16} />
-                          <span>Add Contact</span>
-                        </Button>
-                      </Link>
-                    </td>
                   </tr>
                 ))}
                 
                 {companies.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
+                    <td colSpan={10} className="px-4 py-6 text-center text-neutral-500">
                       No companies found
                     </td>
                   </tr>
