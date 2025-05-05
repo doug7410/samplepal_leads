@@ -68,7 +68,7 @@ const SortHeader = ({ field, label, currentSortField, currentSortDirection, onSo
       ? <ArrowUp className="ml-1 h-4 w-4" />
       : <ArrowDown className="ml-1 h-4 w-4" />
     : <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
-    
+
   const isContactsColumn = field === 'contacts_count';
 
   return (
@@ -120,7 +120,7 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
   // Handle sorting
   const handleSort = (field: string) => {
     const direction = sort.field === field && sort.direction === 'asc' ? 'desc' : 'asc';
-    
+
     router.get(
       route('companies.index'),
       {
@@ -142,7 +142,7 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
       <div className="flex h-full flex-1 flex-col gap-4 p-4">
         <h1 className="text-2xl font-bold">Companies</h1>
 
-        <CompanyFilters 
+        <CompanyFilters
           initialFilters={initialFilters}
           filterOptions={memoizedFilterOptions}
         />
@@ -189,12 +189,12 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
                     className="hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     <td className="whitespace-nowrap px-4 py-3">
-                      <Link href={route('contacts.create', { company_id: company.id })}>
-                        <Button size="sm" variant="ghost" className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="flex items-center gap-1" asChild>
+                        <Link href={route('contacts.create', { company_id: company.id })}>
                           <UserPlus size={16} />
                           <span>Add Contact</span>
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-center">
                       <Link
@@ -258,7 +258,7 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
               </tbody>
             </table>
           </div>
-          
+
           {companies.data.length > 0 && (
             <div className="border-t border-neutral-200 dark:border-neutral-700 px-4">
               <Pagination
