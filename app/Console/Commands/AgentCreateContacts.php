@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Company;
+use App\Models\Contact;
 use Illuminate\Console\Command;
+use JsonException;
 
 class AgentCreateContacts extends Command
 {
@@ -121,8 +123,79 @@ SCRIPT;
             return;
         }
 
-        $this->info('Claude response:');
+        $this->info('Claude response received. Processing output...');
         $this->newLine();
-        $this->line(implode("\n", $output));
+        
+        // Join all output lines
+        $fullOutput = implode("\n", $output);
+        
+        // Extract JSON data from the output using regex
+        if (preg_match('/```json(.*?)```/s', $fullOutput, $matches)) {
+            $jsonData = trim($matches[1]);
+            
+            try {
+                // Parse the JSON data
+                $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
+                
+                if (isset($data['contacts']) && is_array($data['contacts'])) {
+                    $this->info("Found " . count($data['contacts']) . " potential contacts.");
+                    
+                    // Store each contact in the database
+                    foreach ($data['contacts'] as $contactData) {
+                        // Map the contact data to the database fields
+                        $contact = [
+                            'company_id' => $company->id,
+                            'first_name' => $contactData['first_name'] ?? '',
+                            'last_name' => $contactData['last_name'] ?? '',
+                            'email' => $contactData['email'] ?? '',
+                            'phone' => $contactData['phone'] ?? '',
+                            'job_title' => $contactData['position'] ?? '',
+                            'has_been_contacted' => false,
+                        ];
+                        
+                        // Build notes with additional context
+                        $notes = [];
+                        
+                        if (!empty($contactData['notes'])) {
+                            $notes[] = $contactData['notes'];
+                        }
+                        
+                        if (!empty($contactData['phone_type'])) {
+                            $notes[] = "Phone type: " . $contactData['phone_type'];
+                        }
+                        
+                        if (!empty($contactData['relevance_score'])) {
+                            $notes[] = "Relevance score: " . $contactData['relevance_score'] . "/100";
+                        }
+                        
+                        if (!empty($data['research_notes'])) {
+                            $notes[] = "Company research notes: " . $data['research_notes'];
+                        }
+                        
+                        $contact['notes'] = !empty($notes) ? implode("\n\n", $notes) : null;
+                        
+                        // Create the contact
+                        $newContact = Contact::create($contact);
+                        
+                        $this->info("Created contact: {$newContact->first_name} {$newContact->last_name}");
+                    }
+                    
+                    $this->newLine();
+                    $this->info("Successfully processed all contacts for {$company->company_name}.");
+                } else {
+                    $this->error("No valid contacts data found in the output.");
+                    $this->line("Raw output:");
+                    $this->line($fullOutput);
+                }
+            } catch (\JsonException $e) {
+                $this->error("Error parsing JSON data: " . $e->getMessage());
+                $this->line("Raw output:");
+                $this->line($fullOutput);
+            }
+        } else {
+            $this->error("No JSON data found in the output. Claude may not have followed the output format.");
+            $this->line("Raw output:");
+            $this->line($fullOutput);
+        }
     }
 }

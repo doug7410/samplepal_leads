@@ -44,11 +44,36 @@ Returned results should contain, where possible, the following:
 - phone number with extension
 - information on if phone number is cell phone or office
 
-
 Use the Playwright tool.
 
 Set the screen size to 1920x1080 so you can see the entire page.
 
-Scroll to the down the page and take screenshots of the entire page if you need to.
+Scroll down the page and take screenshots of the entire page if you need to.
 
-Think deeply
+Think deeply about who would be the ideal contact based on their role and responsibilities.
+
+## OUTPUT FORMAT REQUIREMENTS ##
+
+After conducting your research, you MUST output your findings in the following JSON format to allow for automated processing:
+
+```json
+{
+  "contacts": [
+    {
+      "first_name": "First name only",
+      "last_name": "Last name only",
+      "position": "Full job title/position",
+      "email": "Email address (if found, otherwise empty string)",
+      "phone": "Phone number with extension (if found, otherwise empty string)",
+      "phone_type": "cell or office or empty string if unknown",
+      "notes": "Any additional information about this contact that might be relevant for sales outreach",
+      "relevance_score": 85
+    }
+  ],
+  "research_notes": "Free-form text with any general observations about the company, their products, or why these contacts were selected"
+}
+```
+
+IMPORTANT: The relevance_score (0-100) should reflect how closely the contact matches our ideal customer profile, with higher scores for operations/specification managers and decision makers.
+
+After the JSON output, you may provide additional free-form analysis if desired.
