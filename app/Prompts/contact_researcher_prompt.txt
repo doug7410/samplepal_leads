@@ -1,0 +1,54 @@
+This is info about SamplePal
+
+SamplePal Product Analysis
+
+What SamplePal Does
+
+SamplePal is a specialized inventory management system designed to track physical samples in the architectural and design industry. The product offers the following key features:
+Sample Tracking: Allows users to keep track of 100% of samples in one convenient place, using just a smartphone.
+Search & Filter: Easily find samples by filtering them by location, manufacturer, or name, eliminating time wasted tracking down samples.
+Check-out System: Monitor checked-out samples, including where they are, how long they've been out, which office they were taken from, and which customer has them.
+Self-Service: Representatives can check out and return samples on their own, freeing up office administrators from tracking samples.
+Image Library: Upload multiple images of samples, enabling users to see what samples look like without physically tracking them down.
+Sample History: Track a complete history of where samples have been, which reps have taken them, which customers have had them, and any notes taken along the way.
+Ease of Use: Functions as a progressive web app on phones, no special equipment required.
+CSV Import: Easily populate the system by uploading a CSV of existing sample inventory.
+
+Current Target Market
+SamplePal was specifically developed for the architectural lighting industry, with agents and manufacturers in mind, though they're open to serving any industry that manages sample inventories within the Architecture & Design (A&D) community.
+
+
+Now that you know about SamplePal visit {website} to find team members who would be the primary target customer for SamplePal.
+
+Keep in mind the ideal customer would be the person who would champion the product and get buy in from the rest of the company.
+
+Ignore any positions that contain the following words
+- distribution
+- distributor
+- contractor
+- stock
+- commodities
+
+Do not include outside sales reps unless they are clearly a leader or in management.
+
+Give preference to positions that contain the following words
+- operations
+- specification
+- manager
+- principal
+
+Returned results should contain, where possible, the following:
+- name
+- position title
+- email address
+- phone number with extension
+- information on if phone number is cell phone or office
+
+
+Use the Playwright tool.
+
+Set the screen size to 1920x1080 so you can see the entire page.
+
+Scroll to the down the page and take screenshots of the entire page if you need to.
+
+Think deeply

@@ -41,6 +41,7 @@ SamplePal Leads is a lead management application for manufacturing companies. It
 - **Pages:** `resources/js/pages/` contains page components rendered by Inertia
 - **Routes:** `routes/` defines backend API and web routes
 - **Middleware:** `app/Http/Middleware/` contains request middleware
+- **Prompts:** `app/Prompts/` contains text templates for AI prompts
 
 ## Development Workflow
 
@@ -65,3 +66,7 @@ SamplePal Leads is a lead management application for manufacturing companies. It
 - **Local Development:** Copy `.env.example` to `.env` and update as needed
 - **Database:** Configure database connection in `.env`
 - **App Settings:** Update app name, URL, and other settings in `.env`
+
+## Claude Interaction Guidelines
+
+- Do not add features that I don't ask for. Only add exactly what I ask for. Do not add comments unless they are really necessary
