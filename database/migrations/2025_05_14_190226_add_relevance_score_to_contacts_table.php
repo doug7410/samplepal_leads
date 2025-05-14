@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
-            $table->boolean('has_been_contacted')->default(false)->after('job_title');
+            $table->unsignedTinyInteger('relevance_score')->nullable();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
-            $table->dropColumn('has_been_contacted');
+            $table->dropColumn('relevance_score');
         });
     }
 };

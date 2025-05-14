@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
-            $table->boolean('has_been_contacted')->default(false)->after('job_title');
+            // First, add the new office_phone column
+            $table->string('office_phone')->nullable();
+
+            // Then rename the existing phone column to cell_phone
+            $table->renameColumn('phone', 'cell_phone');
         });
     }
 
@@ -22,7 +26,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
-            $table->dropColumn('has_been_contacted');
+            // Reverse the changes: rename cell_phone back to phone
+            $table->renameColumn('cell_phone', 'phone');
+
+            // Drop the office_phone column
+            $table->dropColumn('office_phone');
         });
     }
 };

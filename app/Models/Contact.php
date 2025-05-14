@@ -20,12 +20,14 @@ class Contact extends Model
         'first_name',
         'last_name',
         'email',
-        'phone',
+        'cell_phone',
+        'office_phone',
         'job_title',
         'has_been_contacted',
         'notes',
+        'relevance_score',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *

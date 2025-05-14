@@ -13,9 +13,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-    
+
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
-    
+
     // Contact routes
     Route::get('contacts', [ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/create/{company_id}', [ContactController::class, 'create'])->name('contacts.create');
