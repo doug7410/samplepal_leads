@@ -20,6 +20,12 @@ SamplePal was specifically developed for the architectural lighting industry, wi
 
 Now that you know about SamplePal visit {website} to find team members who would be the primary target customer for SamplePal.
 
+Company location information:
+- Address: {address}
+- City/Region: {location}
+
+This company may have multiple locations or branches. Use this location information to identify the appropriate contacts at this specific location, as well as any headquarters or other significant locations you discover. If the company has multiple locations, prioritize finding contacts at both the specific location provided and at headquarters.
+
 Keep in mind the ideal customer would be the person who would champion the product and get buy in from the rest of the company.
 
 Ignore any positions that contain the following words
@@ -70,7 +76,7 @@ After conducting your research, you MUST output your findings in the following J
       "relevance_score": 85
     }
   ],
-  "research_notes": "Free-form text with any general observations about the company, their products, or why these contacts were selected"
+  "research_notes": "Free-form text with any general observations about the company, their products, or why these contacts were selected. Include information about the locations you researched and how you prioritized multiple locations if applicable."
 }
 ```
 
