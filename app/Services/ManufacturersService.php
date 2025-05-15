@@ -47,8 +47,17 @@ class ManufacturersService
             if (isset($repData['id'])) {
                 unset($repData['id']);
             }
-
-            return Company::updateOrCreate($keys, $repData);
+            
+            // Try to find existing company
+            $existingCompany = Company::where($keys)->first();
+            
+            // If we found an existing company, update it; otherwise create a new one
+            if ($existingCompany) {
+                $existingCompany->update($repData);
+                return $existingCompany;
+            } else {
+                return Company::create($repData);
+            }
         });
     }
 }
