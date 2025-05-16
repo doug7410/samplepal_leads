@@ -22,6 +22,10 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+        'configuration_set' => env('AWS_SES_CONFIGURATION_SET', 'default'),
+        'sender_email' => env('AWS_SES_SENDER_EMAIL'),
+        'sender_name' => env('AWS_SES_SENDER_NAME'),
+        'webhook_secret' => env('AWS_SES_WEBHOOK_SECRET'),
     ],
 
     'resend' => [

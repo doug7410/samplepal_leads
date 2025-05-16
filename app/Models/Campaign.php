@@ -8,72 +8,62 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Contact extends Model
+class Campaign extends Model
 {
     use HasFactory;
-
+    
     /**
      * The attributes that are mass assignable.
      *
      * @var array<string>
      */
     protected $fillable = [
-        'company_id',
-        'first_name',
-        'last_name',
-        'email',
-        'cell_phone',
-        'office_phone',
-        'job_title',
-        'has_been_contacted',
-        'deal_status',
-        'notes',
-        'relevance_score',
+        'name',
+        'description',
+        'subject',
+        'content',
+        'from_email',
+        'from_name',
+        'reply_to',
+        'status',
+        'scheduled_at',
+        'completed_at',
+        'user_id',
+        'filter_criteria',
     ];
-
+    
     /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        'has_been_contacted' => 'boolean',
+        'scheduled_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'filter_criteria' => 'json',
     ];
-
+    
     /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Get the user that created the campaign.
      */
-    protected function casts(): array
+    public function user(): BelongsTo
     {
-        return [
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-        ];
-    }
-
-    /**
-     * Get the company that the contact belongs to.
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(User::class);
     }
     
     /**
-     * Get the campaigns associated with this contact.
+     * Get the contacts associated with this campaign.
      */
-    public function campaigns(): BelongsToMany
+    public function contacts(): BelongsToMany
     {
-        return $this->belongsToMany(Campaign::class, 'campaign_contacts')
+        return $this->belongsToMany(Contact::class, 'campaign_contacts')
             ->withPivot('status', 'message_id', 'sent_at', 'delivered_at', 'opened_at', 
                 'clicked_at', 'responded_at', 'failed_at', 'failure_reason')
             ->withTimestamps();
     }
     
     /**
-     * Get the email events for this contact.
+     * Get the email events for this campaign.
      */
     public function emailEvents(): HasMany
     {
@@ -81,7 +71,7 @@ class Contact extends Model
     }
     
     /**
-     * Get the campaign contacts records for this contact.
+     * Get the campaign contacts records.
      */
     public function campaignContacts(): HasMany
     {

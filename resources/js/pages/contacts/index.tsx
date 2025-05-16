@@ -4,7 +4,18 @@ import { type BreadcrumbItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Building2, Edit, FilterIcon, UserPlus, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Building2, 
+  Edit, 
+  FilterIcon, 
+  Mail, 
+  MessageCircle, 
+  CheckCircle, 
+  XCircle,
+  UserPlus, 
+  X 
+} from 'lucide-react';
 import { 
   Select,
   SelectContent,
@@ -24,9 +35,11 @@ interface Contact {
   first_name: string;
   last_name: string;
   email: string | null;
-  phone: string | null;
+  cell_phone: string | null;
+  office_phone: string | null;
   job_title: string | null;
   has_been_contacted: boolean;
+  deal_status: 'none' | 'contacted' | 'responded' | 'in_progress' | 'closed_won' | 'closed_lost';
   created_at: string;
   updated_at: string;
   company: Company;
@@ -40,6 +53,7 @@ interface ContactsIndexProps {
   }[];
   filters: {
     company_id?: number;
+    deal_status?: string;
   };
 }
 
@@ -63,7 +77,19 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
   // Handle company filter change
   const handleCompanyChange = (value: string) => {
     router.get(route('contacts.index'), {
+      ...filters,
       company_id: value === 'all' ? null : value
+    }, {
+      preserveState: true,
+      replace: true
+    });
+  };
+  
+  // Handle deal status filter change
+  const handleDealStatusChange = (value: string) => {
+    router.get(route('contacts.index'), {
+      ...filters,
+      deal_status: value === 'all' ? null : value
     }, {
       preserveState: true,
       replace: true
@@ -107,6 +133,7 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Company Filter */}
               <div className="space-y-2">
                 <label htmlFor="company-filter" className="text-sm font-medium">
                   Company
@@ -129,8 +156,32 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
                 </Select>
               </div>
               
+              {/* Deal Status Filter */}
+              <div className="space-y-2">
+                <label htmlFor="deal-status-filter" className="text-sm font-medium">
+                  Deal Status
+                </label>
+                <Select 
+                  value={filters.deal_status || 'all'} 
+                  onValueChange={handleDealStatusChange}
+                >
+                  <SelectTrigger id="deal-status-filter" className="w-full">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="responded">Responded</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="closed_won">Closed (Won)</SelectItem>
+                    <SelectItem value="closed_lost">Closed (Lost)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               {/* Reset filters button - only show when filters are active */}
-              {filters.company_id && (
+              {(filters.company_id || filters.deal_status) && (
                 <div className="flex items-end">
                   <Button 
                     variant="outline" 
@@ -158,7 +209,7 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Job Title</th>
                   <th className="px-4 py-3">Company</th>
-                  <th className="px-4 py-3">Contacted</th>
+                  <th className="px-4 py-3">Deal Status</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -183,8 +234,8 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {contact.phone ? (
-                        contact.phone.split(' EXT')[0].split(' x')[0].split(' ext')[0]
+                      {contact.cell_phone ? (
+                        contact.cell_phone.split(' EXT')[0].split(' x')[0].split(' ext')[0]
                       ) : (
                         '-'
                       )}
@@ -199,13 +250,37 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
                       </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <Checkbox 
-                        checked={contact.has_been_contacted}
-                        onCheckedChange={() => {
-                          // Use Inertia's router to make the POST request with CSRF protection
-                          router.post(route('contacts.toggle-contacted', { id: contact.id }));
-                        }}
-                      />
+                      {/* Deal status badge with appropriate color */}
+                      {(() => {
+                        // Define badge colors based on deal status
+                        const statusColors: Record<string, string> = {
+                          none: 'bg-gray-100 text-gray-800',
+                          contacted: 'bg-blue-100 text-blue-800',
+                          responded: 'bg-purple-100 text-purple-800',
+                          in_progress: 'bg-yellow-100 text-yellow-800',
+                          closed_won: 'bg-green-100 text-green-800',
+                          closed_lost: 'bg-red-100 text-red-800',
+                        };
+                        
+                        // Define icons based on deal status
+                        const statusIcons: Record<string, any> = {
+                          none: null,
+                          contacted: Mail,
+                          responded: MessageCircle,
+                          in_progress: null,
+                          closed_won: CheckCircle,
+                          closed_lost: XCircle,
+                        };
+                        
+                        const Icon = statusIcons[contact.deal_status];
+                        
+                        return (
+                          <Badge className={statusColors[contact.deal_status]}>
+                            {Icon && <Icon size={12} className="mr-1" />}
+                            <span className="capitalize">{contact.deal_status.replace('_', ' ')}</span>
+                          </Badge>
+                        );
+                      })()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <Link href={route('contacts.edit', { id: contact.id })}>
