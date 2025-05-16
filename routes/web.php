@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('email/track/open/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackOpen'])->name('email.track.open');
     Route::get('email/track/click/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackClick'])->name('email.track.click');
     Route::post('email/track/responded/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'markAsResponded'])->name('email.track.responded');
-    Route::post('email/webhook/ses', [App\Http\Controllers\EmailTrackingController::class, 'handleSesWebhook'])->name('email.webhook.ses');
+    Route::post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])->name('email.webhook');
 });
 
 require __DIR__.'/settings.php';

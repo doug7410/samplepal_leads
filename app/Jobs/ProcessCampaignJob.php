@@ -51,9 +51,37 @@ class ProcessCampaignJob implements ShouldQueue
             ->count();
             
         if ($pendingContactsCount === 0) {
-            // All emails have been sent, mark campaign as completed
-            Log::info("Campaign #{$this->campaign->id} has no pending emails. Marking as completed.");
-            $this->campaign->status = 'completed';
+            // All emails have been processed (sent, failed, etc.)
+            Log::info("Campaign #{$this->campaign->id} has no pending emails. Checking results.");
+            
+            // Get counts by status
+            $statusCounts = $this->campaign->campaignContacts()
+                ->selectRaw('status, count(*) as count')
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->toArray();
+                
+            Log::info("Campaign #{$this->campaign->id} status counts: " . json_encode($statusCounts));
+            
+            // Determine if all emails failed
+            $totalCount = array_sum($statusCounts);
+            $failedCount = $statusCounts['failed'] ?? 0;
+            $sentCount = $statusCounts['sent'] ?? 0;
+            
+            if ($totalCount > 0 && $failedCount === $totalCount) {
+                // All emails failed
+                Log::error("Campaign #{$this->campaign->id} failed: all {$totalCount} emails failed to send.");
+                $this->campaign->status = 'failed';
+            } else if ($sentCount > 0) {
+                // At least some emails were sent successfully
+                Log::info("Campaign #{$this->campaign->id} completed with {$sentCount} sent emails and {$failedCount} failed emails.");
+                $this->campaign->status = 'completed';
+            } else {
+                // No emails were sent successfully
+                Log::error("Campaign #{$this->campaign->id} failed: no emails were sent successfully.");
+                $this->campaign->status = 'failed';
+            }
+            
             $this->campaign->completed_at = now();
             $this->campaign->save();
             return;

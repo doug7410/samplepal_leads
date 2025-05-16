@@ -6,7 +6,7 @@ use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Models\EmailEvent;
-use App\Services\SesMailService;
+use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -14,12 +14,12 @@ use Illuminate\Support\Facades\Redirect;
 
 class EmailTrackingController extends Controller
 {
-    protected SesMailService $mailService;
+    protected MailService $mailService;
     
     /**
      * Constructor
      */
-    public function __construct(SesMailService $mailService)
+    public function __construct(MailService $mailService)
     {
         $this->mailService = $mailService;
     }
@@ -78,78 +78,95 @@ class EmailTrackingController extends Controller
     }
     
     /**
-     * Handle SES webhook (SNS notification).
+     * Handle Resend webhook notification.
      */
-    public function handleSesWebhook(Request $request): Response
+    public function handleWebhook(Request $request): Response
     {
-        $payload = $request->getContent();
-        $data = json_decode($payload, true);
+        $payload = $request->all();
         
-        // Verify it's from SNS
-        if (!isset($data['Type'])) {
+        // Verify the webhook signature if a secret is configured
+        $webhookSecret = config('services.resend.webhook_secret');
+        if ($webhookSecret) {
+            $signature = $request->header('Resend-Signature');
+            if (!$signature || !$this->verifyResendSignature($payload, $signature, $webhookSecret)) {
+                return response('Invalid signature', 403);
+            }
+        }
+        
+        // Verify it's a valid Resend event
+        if (!isset($payload['type'])) {
             return response('Invalid payload', 400);
         }
         
-        // Handle SNS subscription confirmation
-        if ($data['Type'] === 'SubscriptionConfirmation') {
-            // Automatically confirm the subscription
-            if (isset($data['SubscribeURL'])) {
-                file_get_contents($data['SubscribeURL']);
-                return response('Subscription confirmed', 200);
-            }
+        // Map Resend event types to our internal event types
+        $eventTypeMap = [
+            'email.delivered' => 'delivered',
+            'email.delivery_delayed' => 'delayed',
+            'email.complained' => 'complaint',
+            'email.bounced' => 'bounce',
+            'email.opened' => 'opened',
+            'email.clicked' => 'clicked',
+        ];
+        
+        $event = $eventTypeMap[$payload['type']] ?? $payload['type'];
+        
+        // Extract data from the payload
+        $data = $payload['data'] ?? [];
+        
+        // Try to extract campaign and contact IDs from headers
+        $campaignId = null;
+        $contactId = null;
+        $headers = $data['headers'] ?? [];
+        
+        if (isset($headers['X-Campaign-ID'])) {
+            $campaignId = (int) $headers['X-Campaign-ID'];
         }
         
-        // Handle SES notification
-        if ($data['Type'] === 'Notification') {
-            $message = json_decode($data['Message'], true);
+        if (isset($headers['X-Contact-ID'])) {
+            $contactId = (int) $headers['X-Contact-ID'];
+        }
+        
+        // If we have campaign and contact IDs, record the event
+        if ($campaignId && $contactId) {
+            $campaign = Campaign::find($campaignId);
+            $contact = Contact::find($contactId);
             
-            // Skip if not an SES event
-            if (!isset($message['eventType'])) {
-                return response('Not an SES event', 200);
-            }
-            
-            // Process the event
-            $event = $message['eventType'];
-            $mail = $message['mail'] ?? [];
-            
-            // Get tracking data from tags
-            $tags = $mail['tags'] ?? [];
-            $campaignId = null;
-            $contactId = null;
-            
-            foreach ($tags as $tagName => $tagValues) {
-                if ($tagName === 'campaign_id' && !empty($tagValues)) {
-                    $campaignId = (int) $tagValues[0];
-                }
-                if ($tagName === 'contact_id' && !empty($tagValues)) {
-                    $contactId = (int) $tagValues[0];
-                }
-            }
-            
-            // If we have campaign and contact IDs, record the event
-            if ($campaignId && $contactId) {
-                $campaign = Campaign::find($campaignId);
-                $contact = Contact::find($contactId);
+            if ($campaign && $contact) {
+                $eventData = [
+                    'message_id' => $data['id'] ?? null,
+                    'resend_data' => $data,
+                ];
                 
-                if ($campaign && $contact) {
-                    $eventData = [
-                        'message_id' => $mail['messageId'] ?? null,
-                    ];
-                    
-                    if (isset($message['delivery'])) {
-                        $eventData['delivery'] = $message['delivery'];
-                    } elseif (isset($message['bounce'])) {
-                        $eventData['bounce'] = $message['bounce'];
-                    } elseif (isset($message['complaint'])) {
-                        $eventData['complaint'] = $message['complaint'];
-                    }
-                    
-                    $this->recordEvent($campaign, $contact, $event, null, $eventData);
-                }
+                $this->recordEvent($campaign, $contact, $event, null, $eventData);
             }
         }
         
         return response('OK', 200);
+    }
+    
+    /**
+     * Verify Resend webhook signature.
+     */
+    protected function verifyResendSignature(array $payload, string $signature, string $secret): bool
+    {
+        try {
+            // Split timestamp and signature parts
+            [$timestamp, $signaturePart] = explode(',', $signature);
+            $timestamp = substr($timestamp, 2); // Remove 't='
+            $signaturePart = substr($signaturePart, 2); // Remove 's='
+            
+            // Recreate the signed payload string
+            $signedPayload = $timestamp . '.' . json_encode($payload);
+            
+            // Calculate the expected signature
+            $expectedSignature = hash_hmac('sha256', $signedPayload, $secret);
+            
+            // Verify the signature
+            return hash_equals($expectedSignature, $signaturePart);
+        } catch (\Exception $e) {
+            Log::error('Error verifying Resend signature: ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**

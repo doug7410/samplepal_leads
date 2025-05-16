@@ -78,13 +78,13 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
       relevance_min: null as number | null,
       deal_status: [] as string[],
     },
-    contact_ids: selectedContacts.map(c => c.id),
+    contact_ids: selectedContacts?.map(c => c.id) || [],
     schedule_campaign: !!campaign.scheduled_at,
     scheduled_at: campaign.scheduled_at ? new Date(campaign.scheduled_at).toISOString().slice(0, 16) : '',
   });
 
   // State for filtered contacts based on filter criteria
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>(selectedContacts);
+  const [filteredContacts, setFilteredContacts] = useState<Contact[]>(selectedContacts || []);
   
   // Apply filters when filter criteria changes
   useEffect(() => {
@@ -121,10 +121,15 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
     e.preventDefault();
     
     // Set contact IDs based on filtered contacts
-    setData('contact_ids', filteredContacts.map(c => c.id));
+    const contactIds = filteredContacts.map(c => c.id);
+    setData('contact_ids', contactIds);
     
     // Submit the form
     put(route('campaigns.update', { campaign: campaign.id }), {
+      data: {
+        ...data,
+        contact_ids: contactIds, // Ensure contact IDs are included in the submission
+      },
       onSuccess: () => {
         // Redirect happens automatically with flash message
       },

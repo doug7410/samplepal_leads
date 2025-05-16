@@ -109,13 +109,21 @@ class CampaignController extends Controller
      */
     public function edit(Campaign $campaign): Response
     {
+        // Load the campaign with its contacts
+        $campaign->load('campaignContacts');
+        
         $companies = \App\Models\Company::orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
+        
+        // Get contacts associated with this campaign
+        $contactIds = $campaign->campaignContacts->pluck('contact_id')->toArray();
+        $selectedContacts = Contact::whereIn('id', $contactIds)->get();
         
         return Inertia::render('campaigns/edit', [
             'campaign' => $campaign,
             'companies' => $companies,
             'contacts' => $contacts,
+            'selectedContacts' => $selectedContacts,
         ]);
     }
     

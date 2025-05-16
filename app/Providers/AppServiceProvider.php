@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\MailService;
+use App\Services\SesMailService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bind MailService as a substitute for SesMailService
+        $this->app->bind(SesMailService::class, MailService::class);
     }
 
     /**

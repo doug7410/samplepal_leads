@@ -30,6 +30,9 @@ return [
 
     'resend' => [
         'key' => env('RESEND_KEY'),
+        'sender_email' => env('RESEND_SENDER_EMAIL', env('MAIL_FROM_ADDRESS')),
+        'sender_name' => env('RESEND_SENDER_NAME', env('MAIL_FROM_NAME')),
+        'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
     ],
 
     'slack' => [
