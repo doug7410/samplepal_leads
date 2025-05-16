@@ -20,6 +20,8 @@ SamplePal was specifically developed for the architectural lighting industry, wi
 
 Now that you know about SamplePal visit {website} to find team members who would be the primary target customer for SamplePal.
 
+IMPORTANT: DO NOT try to access LinkedIn as it requires authentication. Stick to the company's own website and other publicly accessible resources that don't require login.
+
 Company location information:
 - Address: {address}
 - City/Region: {location}
@@ -50,11 +52,13 @@ Returned results should contain, where possible, the following:
 - phone number with extension
 - information on if phone number is cell phone or office
 
-Use the Playwright tool.
+Use the Playwright tool to navigate and explore the company website.
 
 Set the screen size to 1920x1080 so you can see the entire page.
 
 Scroll down the page and take screenshots of the entire page if you need to.
+
+Only use WebFetch for directly accessible web pages. Do not try to access sites that require login credentials.
 
 Think deeply about who would be the ideal contact based on their role and responsibilities.
 

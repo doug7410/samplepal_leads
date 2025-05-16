@@ -24,6 +24,22 @@ return [
                 'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
             ],
         ],
+        'cooper' => [
+            'agents_url' => 'https://ws.bullseyelocations.com/RestSearch.svc/DoSearch2?countryId=1&distanceUnit=mi&ready=true&_reference=A8&isManualSearch=true&manualSearching=true&searchSourceName=false&PromotionName=false&doSearchMethod=false&internetOnlySearch=false&findNearestForNoResults=false&returnEvent=false&returnCoupon=false&pageSize=1000&getHoursForUpcomingWeek=true&startIndex=0&languageCode=en&InterfaceID=26391&fillAttr=false&showAllLocationsPerCountry=false&showNearestLocationsInList=false&ClientId=8638&ApiKey=55786055-3909-40f2-856d-469ddf685f14',
+            'headers' => [
+                'accept' => 'application/json, text/plain, */*',
+                'accept-language' => 'en-US,en;q=0.9',
+                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+            ],
+        ],
+        'acuity' => [
+            'agents_url' => 'https://www.acuitybrands.com/api/howtobuy/getfromsource/agents?filter=true%20eq%20true',
+            'headers' => [
+                'accept' => 'application/json, text/plain, */*',
+                'accept-language' => 'en-US,en;q=0.9',
+                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+            ],
+        ],
     ],
 
     /*
@@ -222,6 +238,31 @@ return [
             'EmailAddress' => 'email',
             'ContactName' => 'contact_name',
             'MobileNumber' => 'contact_phone'
+        ],
+        'cooper' => [
+            'Name' => 'company_name',
+            'PhoneNumber' => 'company_phone',
+            'Address1' => 'address_line_1',
+            'Address2' => 'address_line_2',
+            'PostCode' => 'zip_code',
+            'City' => 'city_or_region',
+            'State' => 'state',
+            'CountryName' => 'country',
+            'URL' => 'website',
+            'EmailAddress' => 'email',
+            'ContactName' => 'contact_name',
+            'MobileNumber' => 'contact_phone'
+        ],
+        'acuity' => [
+            'Business' => 'company_name',
+            'Phone' => 'company_phone',
+            'AddressLine1' => 'address_line_1',
+            'AddressLine2' => 'address_line_2',
+            'PostalCode' => 'zip_code',
+            'Locality' => 'city_or_region',
+            'AdminDistrict' => 'state',
+            'CountryRegion' => 'country', 
+            'Web' => 'website'
         ],
     ],
 ];
