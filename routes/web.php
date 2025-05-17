@@ -28,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('campaigns', App\Http\Controllers\CampaignController::class);
     Route::post('campaigns/{campaign}/add-contacts', [App\Http\Controllers\CampaignController::class, 'addContacts'])->name('campaigns.add-contacts');
     Route::post('campaigns/{campaign}/remove-contacts', [App\Http\Controllers\CampaignController::class, 'removeContacts'])->name('campaigns.remove-contacts');
+    Route::post('campaigns/{campaign}/add-companies', [App\Http\Controllers\CampaignController::class, 'addCompanies'])->name('campaigns.add-companies');
+    Route::post('campaigns/{campaign}/remove-companies', [App\Http\Controllers\CampaignController::class, 'removeCompanies'])->name('campaigns.remove-companies');
     Route::post('campaigns/{campaign}/schedule', [App\Http\Controllers\CampaignController::class, 'schedule'])->name('campaigns.schedule');
     Route::post('campaigns/{campaign}/send', [App\Http\Controllers\CampaignController::class, 'send'])->name('campaigns.send');
     Route::post('campaigns/{campaign}/pause', [App\Http\Controllers\CampaignController::class, 'pause'])->name('campaigns.pause');

@@ -27,6 +27,10 @@ class Campaign extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    // Campaign type constants
+    public const TYPE_CONTACT = 'contact';
+    public const TYPE_COMPANY = 'company';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -45,6 +49,16 @@ class Campaign extends Model
         'completed_at',
         'user_id',
         'filter_criteria',
+        'type',
+    ];
+    
+    /**
+     * The attributes that should be set to a default value when not present.
+     * 
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'type' => self::TYPE_CONTACT,
     ];
 
     /**
@@ -91,6 +105,15 @@ class Campaign extends Model
     public function campaignContacts(): HasMany
     {
         return $this->hasMany(CampaignContact::class);
+    }
+    
+    /**
+     * Get the companies associated with this campaign.
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'campaign_companies')
+            ->withTimestamps();
     }
 
     /**

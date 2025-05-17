@@ -36,6 +36,7 @@ class CampaignFactory extends Factory
             'status' => Campaign::STATUS_DRAFT,
             'user_id' => User::factory(),
             'filter_criteria' => ['manufacturer' => fake()->randomElement(['Acuity', 'Cooper', 'Signify'])],
+            'type' => Campaign::TYPE_CONTACT,
         ];
     }
 
@@ -82,6 +83,18 @@ class CampaignFactory extends Factory
             'status' => Campaign::STATUS_FAILED,
             'scheduled_at' => fake()->dateTimeBetween('-2 weeks', '-1 week'),
             'completed_at' => fake()->dateTimeBetween('-1 week', 'now'),
+        ]);
+    }
+    
+    /**
+     * Indicate that this is a company campaign.
+     */
+    public function companyCampaign(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => Campaign::TYPE_COMPANY,
+            'subject' => 'Hello {{recipients}}',
+            'content' => '<p>Hello {{recipients}},</p><p>This is a company campaign.</p>',
         ]);
     }
 }

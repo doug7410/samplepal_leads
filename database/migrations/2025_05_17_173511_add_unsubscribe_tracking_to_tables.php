@@ -49,8 +49,7 @@ return new class extends Migration
                 $table->text('failure_reason')->nullable();
                 $table->timestamps();
                 
-                // Ensure each contact is only added once per campaign
-                $table->unique(['campaign_id', 'contact_id']);
+                // Skip creating the unique index, it will be created if not exists in a separate step
             });
             
             // Step 3: Copy data from old to new table
@@ -59,8 +58,12 @@ return new class extends Migration
                        opened_at, clicked_at, responded_at, failed_at, NULL, failure_reason, 
                        created_at, updated_at
                 FROM campaign_contacts_old');
+                
+            // Step 4: Add unique index if it doesn't exist
+            DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS campaign_contacts_campaign_id_contact_id_unique 
+                           ON campaign_contacts (campaign_id, contact_id)');
             
-            // Step 4: Drop the old table
+            // Step 5: Drop the old table
             Schema::dropIfExists('campaign_contacts_old');
         } else {
             // For PostgreSQL (production)
@@ -109,8 +112,7 @@ return new class extends Migration
                 $table->text('failure_reason')->nullable();
                 $table->timestamps();
                 
-                // Ensure each contact is only added once per campaign
-                $table->unique(['campaign_id', 'contact_id']);
+                // Skip unique index, it will be added separately
             });
             
             // Step 3: Copy data from old to new table, excluding unsubscribed records
@@ -123,8 +125,12 @@ return new class extends Migration
                        message_id, sent_at, delivered_at, opened_at, clicked_at, 
                        responded_at, failed_at, failure_reason, created_at, updated_at
                 FROM campaign_contacts_old");
+                
+            // Step 4: Add unique index if it doesn't exist
+            DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS campaign_contacts_campaign_id_contact_id_unique 
+                           ON campaign_contacts (campaign_id, contact_id)');
             
-            // Step 4: Drop the old table
+            // Step 5: Drop the old table
             Schema::dropIfExists('campaign_contacts_old');
         } else {
             // For PostgreSQL (production)

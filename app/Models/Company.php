@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
@@ -58,5 +59,14 @@ class Company extends Model
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
+    }
+    
+    /**
+     * Get the campaigns associated with this company.
+     */
+    public function campaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(Campaign::class, 'campaign_companies')
+            ->withTimestamps();
     }
 }

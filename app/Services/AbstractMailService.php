@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Decorators\EmailContent\EmailContentProcessorFactory;
 use App\Decorators\EmailContent\EmailContentProcessorInterface;
+use App\Helpers\RecipientsFormatter;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
@@ -155,6 +156,21 @@ abstract class AbstractMailService implements MailServiceInterface
             '{{company}}' => optional($contact->company)->name ?? '',
             '{{job_title}}' => $contact->job_title ?? '',
         ];
+        
+        // Handle {{recipients}} variable for company campaigns
+        if (strpos($content, '{{recipients}}') !== false && $contact->company_id) {
+            // Get all contacts for the company
+            $companyContacts = $contact->company->contacts()
+                ->whereNotNull('email')
+                ->where('id', '!=', $contact->id) // Exclude current contact
+                ->get();
+            
+            // Add current contact to the beginning
+            $companyContacts->prepend($contact);
+            
+            // Format the recipients list
+            $replacements['{{recipients}}'] = RecipientsFormatter::format($companyContacts);
+        }
 
         return str_replace(array_keys($replacements), array_values($replacements), $content);
     }

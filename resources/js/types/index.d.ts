@@ -75,6 +75,7 @@ export interface Campaign {
     from_name: string | null;
     reply_to: string | null;
     status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'paused' | 'failed';
+    type: 'contact' | 'company';
     scheduled_at: string | null;
     completed_at: string | null;
     user_id: number;
@@ -83,6 +84,7 @@ export interface Campaign {
     updated_at: string;
     user: User;
     campaign_contacts?: CampaignContact[];
+    companies?: Company[];
 }
 
 export interface CampaignContact {

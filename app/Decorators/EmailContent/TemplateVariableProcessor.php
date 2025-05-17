@@ -25,6 +25,21 @@ class TemplateVariableProcessor extends EmailContentDecorator
             '{{campaign_id}}' => (string) ($campaign->id ?? ''),
             '{{date}}' => now()->format('F j, Y'),
         ];
+        
+        // Handle {{recipients}} variable for company campaigns
+        if (strpos($content, '{{recipients}}') !== false && isset($contact->company_id) && $contact->company_id) {
+            // Get all contacts for the company
+            $companyContacts = $contact->company->contacts()
+                ->whereNotNull('email')
+                ->where('id', '!=', $contact->id) // Exclude current contact
+                ->get();
+            
+            // Add current contact to the beginning
+            $companyContacts->prepend($contact);
+            
+            // Format the recipients list using RecipientsFormatter
+            $replacements['{{recipients}}'] = \App\Helpers\RecipientsFormatter::format($companyContacts);
+        }
 
         return str_replace(array_keys($replacements), array_values($replacements), $content);
     }

@@ -71,21 +71,35 @@ class CampaignController extends Controller
             'reply_to' => 'nullable|email|max:255',
             'filter_criteria' => 'nullable|array',
             'contact_ids' => 'nullable|array',
+            'company_ids' => 'nullable|array',
+            'type' => 'nullable|string|in:contact,company',
             'scheduled_at' => 'nullable|date',
         ]);
 
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = Campaign::STATUS_DRAFT;
+        
+        // Set default type if not provided
+        if (!isset($validated['type'])) {
+            $validated['type'] = Campaign::TYPE_CONTACT;
+        }
 
         $campaign = $this->campaignService->createCampaign($validated);
 
-        // Add contacts from specific IDs if provided
-        if (isset($validated['contact_ids']) && ! empty($validated['contact_ids'])) {
-            $this->campaignService->addContacts($campaign, $validated['contact_ids']);
+        // For contact campaigns, add contacts
+        if ($campaign->type === Campaign::TYPE_CONTACT) {
+            // Add contacts from specific IDs if provided
+            if (isset($validated['contact_ids']) && ! empty($validated['contact_ids'])) {
+                $this->campaignService->addContacts($campaign, $validated['contact_ids']);
+            }
+            // Or add contacts from filter criteria
+            elseif (isset($validated['filter_criteria']) && ! empty($validated['filter_criteria'])) {
+                $this->campaignService->addContactsFromFilter($campaign, $validated['filter_criteria']);
+            }
         }
-        // Or add contacts from filter criteria
-        elseif (isset($validated['filter_criteria']) && ! empty($validated['filter_criteria'])) {
-            $this->campaignService->addContactsFromFilter($campaign, $validated['filter_criteria']);
+        // For company campaigns, add companies
+        elseif ($campaign->type === Campaign::TYPE_COMPANY && isset($validated['company_ids']) && !empty($validated['company_ids'])) {
+            $this->commandService->addCompanies($campaign, $validated['company_ids']);
         }
 
         return redirect()->route('campaigns.show', $campaign)
@@ -97,7 +111,7 @@ class CampaignController extends Controller
      */
     public function show(Campaign $campaign): Response
     {
-        $campaign->load(['campaignContacts.contact']);
+        $campaign->load(['campaignContacts.contact', 'companies']);
 
         $statistics = $this->campaignService->getStatistics($campaign);
 
@@ -112,21 +126,25 @@ class CampaignController extends Controller
      */
     public function edit(Campaign $campaign): Response
     {
-        // Load the campaign with its contacts
-        $campaign->load('campaignContacts');
+        // Load the campaign with its contacts and companies
+        $campaign->load('campaignContacts', 'companies');
 
         $companies = \App\Models\Company::orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
 
-        // Get contacts associated with this campaign
+        // Get contacts associated with this campaign (for contact campaigns)
         $contactIds = $campaign->campaignContacts->pluck('contact_id')->toArray();
         $selectedContacts = Contact::whereIn('id', $contactIds)->get();
+        
+        // Get companies associated with this campaign (for company campaigns)
+        $selectedCompanies = $campaign->companies;
 
         return Inertia::render('campaigns/edit', [
             'campaign' => $campaign,
             'companies' => $companies,
             'contacts' => $contacts,
             'selectedContacts' => $selectedContacts,
+            'selectedCompanies' => $selectedCompanies,
         ]);
     }
 
@@ -153,18 +171,37 @@ class CampaignController extends Controller
             'scheduled_at' => 'nullable|date',
             'contact_ids' => 'nullable|array',
             'contact_ids.*' => 'exists:contacts,id',
+            'company_ids' => 'nullable|array',
+            'company_ids.*' => 'exists:companies,id',
+            'type' => 'nullable|string|in:contact,company',
         ]);
 
         $this->campaignService->updateCampaign($campaign, $validated);
 
-        // Update campaign contacts if provided
-        if (isset($validated['contact_ids'])) {
-            // Remove all existing contacts
-            $campaign->campaignContacts()->delete();
+        // For contact campaigns
+        if ($campaign->type === Campaign::TYPE_CONTACT) {
+            // Update campaign contacts if provided
+            if (isset($validated['contact_ids'])) {
+                // Remove all existing contacts
+                $campaign->campaignContacts()->delete();
 
-            // Add new contacts
-            if (! empty($validated['contact_ids'])) {
-                $this->campaignService->addContacts($campaign, $validated['contact_ids']);
+                // Add new contacts
+                if (! empty($validated['contact_ids'])) {
+                    $this->campaignService->addContacts($campaign, $validated['contact_ids']);
+                }
+            }
+        }
+        // For company campaigns
+        elseif ($campaign->type === Campaign::TYPE_COMPANY) {
+            // Update campaign companies if provided
+            if (isset($validated['company_ids'])) {
+                // Remove all existing companies
+                $campaign->companies()->detach();
+
+                // Add new companies
+                if (!empty($validated['company_ids'])) {
+                    $this->commandService->addCompanies($campaign, $validated['company_ids']);
+                }
             }
         }
 
@@ -199,6 +236,11 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be modified.');
         }
+        
+        if ($campaign->type !== Campaign::TYPE_CONTACT) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Contacts can only be added to contact-type campaigns.');
+        }
 
         $validated = $request->validate([
             'contact_ids' => 'required|array',
@@ -209,6 +251,33 @@ class CampaignController extends Controller
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts added to campaign.");
+    }
+    
+    /**
+     * Add companies to a campaign.
+     */
+    public function addCompanies(Request $request, Campaign $campaign): RedirectResponse
+    {
+        // Only allow adding companies to draft company campaigns
+        if ($campaign->status !== Campaign::STATUS_DRAFT) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Only draft campaigns can be modified.');
+        }
+        
+        if ($campaign->type !== Campaign::TYPE_COMPANY) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Companies can only be added to company-type campaigns.');
+        }
+
+        $validated = $request->validate([
+            'company_ids' => 'required|array',
+            'company_ids.*' => 'exists:companies,id',
+        ]);
+
+        $count = $this->commandService->addCompanies($campaign, $validated['company_ids']);
+
+        return redirect()->route('campaigns.show', $campaign)
+            ->with('success', "{$count} companies added to campaign.");
     }
 
     /**
@@ -221,6 +290,11 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be modified.');
         }
+        
+        if ($campaign->type !== Campaign::TYPE_CONTACT) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Contacts can only be removed from contact-type campaigns.');
+        }
 
         $validated = $request->validate([
             'contact_ids' => 'required|array',
@@ -231,6 +305,33 @@ class CampaignController extends Controller
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts removed from campaign.");
+    }
+    
+    /**
+     * Remove companies from a campaign.
+     */
+    public function removeCompanies(Request $request, Campaign $campaign): RedirectResponse
+    {
+        // Only allow removing companies from draft company campaigns
+        if ($campaign->status !== Campaign::STATUS_DRAFT) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Only draft campaigns can be modified.');
+        }
+        
+        if ($campaign->type !== Campaign::TYPE_COMPANY) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Companies can only be removed from company-type campaigns.');
+        }
+
+        $validated = $request->validate([
+            'company_ids' => 'required|array',
+            'company_ids.*' => 'exists:companies,id',
+        ]);
+
+        $count = $this->commandService->removeCompanies($campaign, $validated['company_ids']);
+
+        return redirect()->route('campaigns.show', $campaign)
+            ->with('success', "{$count} companies removed from campaign.");
     }
 
     /**
@@ -245,9 +346,15 @@ class CampaignController extends Controller
         }
 
         // Check if the campaign has contacts
-        if ($campaign->campaignContacts()->count() === 0) {
+        if ($campaign->type === Campaign::TYPE_CONTACT && $campaign->campaignContacts()->count() === 0) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Cannot schedule a campaign with no contacts. Please add contacts first.');
+        }
+        
+        // Check if the company campaign has companies
+        if ($campaign->type === Campaign::TYPE_COMPANY && $campaign->companies()->count() === 0) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Cannot schedule a company campaign with no companies. Please add companies first.');
         }
 
         $validated = $request->validate([
@@ -333,10 +440,16 @@ class CampaignController extends Controller
                 ->with('error', 'Only draft or scheduled campaigns can be sent immediately.');
         }
 
-        // Check if the campaign has contacts
-        if ($campaign->campaignContacts()->count() === 0) {
+        // Check if the contact campaign has contacts
+        if ($campaign->type === Campaign::TYPE_CONTACT && $campaign->campaignContacts()->count() === 0) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Cannot send campaign with no contacts.');
+        }
+        
+        // Check if the company campaign has companies
+        if ($campaign->type === Campaign::TYPE_COMPANY && $campaign->companies()->count() === 0) {
+            return redirect()->route('campaigns.show', $campaign)
+                ->with('error', 'Cannot send campaign with no companies.');
         }
 
         $success = $this->commandService->send($campaign);

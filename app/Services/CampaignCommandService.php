@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Commands\Campaigns\AddCompaniesCommand;
 use App\Commands\Campaigns\AddContactsCommand;
 use App\Commands\Campaigns\PauseCampaignCommand;
+use App\Commands\Campaigns\RemoveCompaniesCommand;
 use App\Commands\Campaigns\RemoveContactsCommand;
 use App\Commands\Campaigns\ResumeCampaignCommand;
 use App\Commands\Campaigns\ScheduleCampaignCommand;
@@ -108,6 +110,30 @@ class CampaignCommandService
     {
         $command = new RemoveContactsCommand($campaign, $contactIds);
 
+        return $this->invoker->execute($command);
+    }
+    
+    /**
+     * Add companies to a campaign
+     *
+     * @return int Number of companies added
+     */
+    public function addCompanies(Campaign $campaign, array $companyIds): int
+    {
+        $command = new AddCompaniesCommand($campaign, $companyIds);
+        
+        return $this->invoker->execute($command);
+    }
+    
+    /**
+     * Remove companies from a campaign
+     *
+     * @return int Number of companies removed
+     */
+    public function removeCompanies(Campaign $campaign, array $companyIds): int
+    {
+        $command = new RemoveCompaniesCommand($campaign, $companyIds);
+        
         return $this->invoker->execute($command);
     }
 }

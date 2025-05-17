@@ -55,12 +55,14 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
     from_email: '',
     from_name: '',
     reply_to: '',
+    type: 'contact', // Default to contact campaign
     filter_criteria: {
       company_id: null as number | null,
       relevance_min: null as number | null,
       deal_status: [] as string[],
     },
     contact_ids: [] as number[],
+    company_ids: [] as number[],
     schedule_campaign: false,
     scheduled_at: '',
   });
@@ -112,15 +114,27 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
   const handleSubmit = (e: React.FormEvent, asDraft = true) => {
     e.preventDefault();
     
-    // Set contact IDs based on filtered contacts
-    const contactIds = filteredContacts.map(c => c.id);
-    
-    // Update the form data
-    setData('contact_ids', contactIds);
+    if (data.type === 'contact') {
+      // For contact campaigns, set contact IDs based on filtered contacts
+      const contactIds = filteredContacts.map(c => c.id);
+      setData('contact_ids', contactIds);
+      
+      // Validation check
+      if (contactIds.length === 0) {
+        alert('You need to select at least one contact for this campaign');
+        return;
+      }
+    } else {
+      // For company campaigns, validation check
+      if (data.company_ids.length === 0) {
+        alert('You need to select at least one company for this campaign');
+        return;
+      }
+    }
     
     // Add a short delay to ensure state is updated before submitting
     setTimeout(() => {
-      // Submit the form with contact IDs
+      // Submit the form
       post(route('campaigns.store'), {
         onSuccess: () => {
           // Redirect happens automatically with flash message
@@ -169,6 +183,36 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
               <h2 className="text-lg font-semibold mb-4">Campaign Details</h2>
               
               <div className="space-y-4">
+                {/* Campaign Type */}
+                <div>
+                  <Label htmlFor="campaign_type">Campaign Type</Label>
+                  <Select
+                    value={data.type}
+                    onValueChange={(value) => {
+                      setData('type', value);
+                      // Reset the appropriate IDs when switching types
+                      if (value === 'contact') {
+                        setData('company_ids', []);
+                      } else {
+                        setData('contact_ids', []);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="campaign_type">
+                      <SelectValue placeholder="Select Campaign Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="contact">Individual Contacts</SelectItem>
+                      <SelectItem value="company">Company (All Contacts)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {data.type === 'contact' 
+                      ? "Target individual contacts based on criteria" 
+                      : "Target all contacts within selected companies"}
+                  </div>
+                </div>
+                
                 {/* Campaign Name */}
                 <div>
                   <Label htmlFor="name">Campaign Name</Label>
@@ -316,148 +360,234 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
                   )}
                   <div className="text-xs text-gray-500 mt-1">
                     Available variables: <code>&#123;&#123;first_name&#125;&#125;</code>, <code>&#123;&#123;last_name&#125;&#125;</code>, <code>&#123;&#123;full_name&#125;&#125;</code>, <code>&#123;&#123;email&#125;&#125;</code>, <code>&#123;&#123;company&#125;&#125;</code>, <code>&#123;&#123;job_title&#125;&#125;</code>
+                    {data.type === 'company' && (
+                      <>, <code>&#123;&#123;recipients&#125;&#125;</code> (list of all people in the company, e.g. "Doug, Angela and John")</>
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
             
-            {/* Contact Filter */}
+            {/* Target Audience */}
             <Card className="p-5">
               <h2 className="text-lg font-semibold mb-4">Target Audience</h2>
               
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Select filters to determine which contacts will receive this campaign.
-                  Only contacts with valid email addresses will be included.
-                </p>
-                
-                {/* Company Filter */}
-                <div>
-                  <Label htmlFor="company_filter">Company</Label>
-                  <Select
-                    value={data.filter_criteria.company_id?.toString() || 'all'}
-                    onValueChange={(value) => 
-                      setData('filter_criteria', {
-                        ...data.filter_criteria,
-                        company_id: value && value !== 'all' ? parseInt(value) : null
-                      })
-                    }
-                  >
-                    <SelectTrigger id="company_filter">
-                      <SelectValue placeholder="All Companies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Companies</SelectItem>
-                      {companies && companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id.toString()}>
-                          {company.company_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Relevance Score Filter */}
-                <div>
-                  <Label htmlFor="relevance_filter">Minimum Relevance Score</Label>
-                  <Select
-                    value={data.filter_criteria.relevance_min?.toString() || 'any'}
-                    onValueChange={(value) => 
-                      setData('filter_criteria', {
-                        ...data.filter_criteria,
-                        relevance_min: value && value !== 'any' ? parseInt(value) : null
-                      })
-                    }
-                  >
-                    <SelectTrigger id="relevance_filter">
-                      <SelectValue placeholder="Any Score" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any Score</SelectItem>
-                      <SelectItem value="20">20+ (Low)</SelectItem>
-                      <SelectItem value="40">40+ (Medium)</SelectItem>
-                      <SelectItem value="60">60+ (High)</SelectItem>
-                      <SelectItem value="80">80+ (Very High)</SelectItem>
-                      <SelectItem value="100">100 (Perfect Match)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Deal Status Filter */}
-                <div>
-                  <Label className="mb-2 block">Deal Status</Label>
-                  <div className="space-y-2">
-                    {['none', 'contacted', 'responded', 'in_progress', 'closed_won', 'closed_lost'].map((status) => (
-                      <div key={status} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`status_${status}`}
-                          checked={data.filter_criteria.deal_status.includes(status)}
-                          onCheckedChange={(checked) => {
-                            const newStatuses = checked
-                              ? [...data.filter_criteria.deal_status, status]
-                              : data.filter_criteria.deal_status.filter(s => s !== status);
-                            
-                            setData('filter_criteria', {
-                              ...data.filter_criteria,
-                              deal_status: newStatuses
-                            });
-                          }}
-                        />
-                        <Label
-                          htmlFor={`status_${status}`}
-                          className="text-sm capitalize"
-                        >
-                          {status.replace('_', ' ')}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Contact Count */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users size={16} className="text-gray-500" />
-                      <span className="font-medium">Recipients</span>
-                    </div>
-                    <span className="font-semibold">{filteredContacts.length}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {filteredContacts.length === 0 
-                      ? "No contacts match your current filters. Adjust the filters to include recipients."
-                      : `${filteredContacts.length} contacts will receive this campaign.`
-                    }
+              {/* For Contact-based campaigns */}
+              {data.type === 'contact' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Select filters to determine which contacts will receive this campaign.
+                    Only contacts with valid email addresses will be included.
+                  </p>
+                  
+                  {/* Company Filter */}
+                  <div>
+                    <Label htmlFor="company_filter">Company</Label>
+                    <Select
+                      value={data.filter_criteria.company_id?.toString() || 'all'}
+                      onValueChange={(value) => 
+                        setData('filter_criteria', {
+                          ...data.filter_criteria,
+                          company_id: value && value !== 'all' ? parseInt(value) : null
+                        })
+                      }
+                    >
+                      <SelectTrigger id="company_filter">
+                        <SelectValue placeholder="All Companies" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Companies</SelectItem>
+                        {companies && companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id.toString()}>
+                            {company.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
-                  {/* Debug: Show contact names */}
-                  <div className="mt-3 text-xs">
-                    <div className="font-medium">Selected contacts:</div>
-                    <ul className="pl-4 list-disc">
-                      {filteredContacts.slice(0, 10).map(contact => (
-                        <li key={contact.id}>
-                          {contact.first_name} {contact.last_name} - {contact.email || 'No email'}
-                        </li>
+                  {/* Relevance Score Filter */}
+                  <div>
+                    <Label htmlFor="relevance_filter">Minimum Relevance Score</Label>
+                    <Select
+                      value={data.filter_criteria.relevance_min?.toString() || 'any'}
+                      onValueChange={(value) => 
+                        setData('filter_criteria', {
+                          ...data.filter_criteria,
+                          relevance_min: value && value !== 'any' ? parseInt(value) : null
+                        })
+                      }
+                    >
+                      <SelectTrigger id="relevance_filter">
+                        <SelectValue placeholder="Any Score" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any Score</SelectItem>
+                        <SelectItem value="20">20+ (Low)</SelectItem>
+                        <SelectItem value="40">40+ (Medium)</SelectItem>
+                        <SelectItem value="60">60+ (High)</SelectItem>
+                        <SelectItem value="80">80+ (Very High)</SelectItem>
+                        <SelectItem value="100">100 (Perfect Match)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Deal Status Filter */}
+                  <div>
+                    <Label className="mb-2 block">Deal Status</Label>
+                    <div className="space-y-2">
+                      {['none', 'contacted', 'responded', 'in_progress', 'closed_won', 'closed_lost'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`status_${status}`}
+                            checked={data.filter_criteria.deal_status.includes(status)}
+                            onCheckedChange={(checked) => {
+                              const newStatuses = checked
+                                ? [...data.filter_criteria.deal_status, status]
+                                : data.filter_criteria.deal_status.filter(s => s !== status);
+                              
+                              setData('filter_criteria', {
+                                ...data.filter_criteria,
+                                deal_status: newStatuses
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`status_${status}`}
+                            className="text-sm capitalize"
+                          >
+                            {status.replace('_', ' ')}
+                          </Label>
+                        </div>
                       ))}
-                      {filteredContacts.length > 10 && <li>...and {filteredContacts.length - 10} more</li>}
-                    </ul>
+                    </div>
+                  </div>
+                  
+                  {/* Contact Count */}
+                  <div className="mt-6 p-4 bg-gray-50 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users size={16} className="text-gray-500" />
+                        <span className="font-medium">Recipients</span>
+                      </div>
+                      <span className="font-semibold">{filteredContacts.length}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {filteredContacts.length === 0 
+                        ? "No contacts match your current filters. Adjust the filters to include recipients."
+                        : `${filteredContacts.length} contacts will receive this campaign.`
+                      }
+                    </div>
+                    
+                    {/* Show contact names */}
+                    <div className="mt-3 text-xs">
+                      <div className="font-medium">Selected contacts:</div>
+                      <ul className="pl-4 list-disc">
+                        {filteredContacts.slice(0, 10).map(contact => (
+                          <li key={contact.id}>
+                            {contact.first_name} {contact.last_name} - {contact.email || 'No email'}
+                          </li>
+                        ))}
+                        {filteredContacts.length > 10 && <li>...and {filteredContacts.length - 10} more</li>}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+              
+              {/* For Company-based campaigns */}
+              {data.type === 'company' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Select companies to target. All contacts with valid emails in these companies will receive the campaign.
+                    The <code>&#123;&#123;recipients&#125;&#125;</code> variable will list all contacts in each company.
+                  </p>
+                  
+                  {/* Company Selection */}
+                  <div>
+                    <Label className="mb-2 block">Select Companies</Label>
+                    <div className="space-y-2 max-h-96 overflow-y-auto border rounded-md p-3">
+                      {companies && companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`company_${company.id}`}
+                            checked={data.company_ids.includes(company.id)}
+                            onCheckedChange={(checked) => {
+                              const newCompanyIds = checked
+                                ? [...data.company_ids, company.id]
+                                : data.company_ids.filter(id => id !== company.id);
+                              
+                              setData('company_ids', newCompanyIds);
+                            }}
+                          />
+                          <Label
+                            htmlFor={`company_${company.id}`}
+                            className="text-sm"
+                          >
+                            {company.company_name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Company Count and Summary */}
+                  <div className="mt-6 p-4 bg-gray-50 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building size={16} className="text-gray-500" />
+                        <span className="font-medium">Selected Companies</span>
+                      </div>
+                      <span className="font-semibold">{data.company_ids.length}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {data.company_ids.length === 0 
+                        ? "No companies selected. Select at least one company to proceed."
+                        : `${data.company_ids.length} companies will be targeted in this campaign.`
+                      }
+                    </div>
+                    
+                    {/* Show selected companies */}
+                    {data.company_ids.length > 0 && (
+                      <div className="mt-3 text-xs">
+                        <div className="font-medium">Selected companies:</div>
+                        <ul className="pl-4 list-disc">
+                          {data.company_ids.map(id => {
+                            const company = companies.find(c => c.id === id);
+                            return company ? (
+                              <li key={id}>
+                                {company.company_name}
+                              </li>
+                            ) : null;
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* Submit buttons */}
               <div className="mt-8 space-y-3">
                 <Button
                   type="submit"
-                  disabled={processing || filteredContacts.length === 0}
+                  disabled={processing || 
+                    (data.type === 'contact' && filteredContacts.length === 0) || 
+                    (data.type === 'company' && data.company_ids.length === 0)}
                   className="w-full"
                 >
                   Create Campaign
                 </Button>
                 
-                {filteredContacts.length === 0 && (
+                {(data.type === 'contact' && filteredContacts.length === 0) && (
                   <div className="text-amber-600 text-xs text-center">
                     You need to select at least one recipient to create a campaign
+                  </div>
+                )}
+                
+                {(data.type === 'company' && data.company_ids.length === 0) && (
+                  <div className="text-amber-600 text-xs text-center">
+                    You need to select at least one company to create a campaign
                   </div>
                 )}
               </div>

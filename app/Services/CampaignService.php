@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Helpers\RecipientsFormatter;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
+use App\Models\Company;
 use App\Models\Contact;
 use Illuminate\Support\Facades\DB;
 
@@ -165,6 +167,105 @@ class CampaignService
     }
 
     /**
+     * Add companies to a campaign.
+     *
+     * @return int Number of companies added
+     */
+    public function addCompanies(Campaign $campaign, array $companyIds): int
+    {
+        return DB::transaction(function () use ($campaign, $companyIds) {
+            // Find companies not already in the campaign
+            $companies = Company::whereIn('id', $companyIds)
+                ->whereNotIn('id', function ($query) use ($campaign) {
+                    $query->select('company_id')
+                        ->from('campaign_companies')
+                        ->where('campaign_id', $campaign->id);
+                })
+                ->get();
+            
+            // Add them to the campaign
+            if ($companies->isNotEmpty()) {
+                $campaign->companies()->attach($companies->pluck('id')->toArray());
+            }
+            
+            return $companies->count();
+        });
+    }
+    
+    /**
+     * Remove companies from a campaign.
+     *
+     * @return int Number of companies removed
+     */
+    public function removeCompanies(Campaign $campaign, array $companyIds): int
+    {
+        return DB::transaction(function () use ($campaign, $companyIds) {
+            return $campaign->companies()->detach($companyIds);
+        });
+    }
+    
+    /**
+     * Prepare all contacts from associated companies for processing in a company campaign.
+     * 
+     * @return int Number of contacts added to the campaign
+     */
+    public function prepareCompanyContactsForProcessing(Campaign $campaign): int
+    {
+        return DB::transaction(function () use ($campaign) {
+            // Make sure this is a company campaign
+            if ($campaign->type !== Campaign::TYPE_COMPANY) {
+                return 0;
+            }
+            
+            $contactsAdded = 0;
+            
+            // Get all companies associated with this campaign
+            $companies = $campaign->companies;
+            
+            foreach ($companies as $company) {
+                // Get all contacts for this company that have valid emails
+                $contacts = $company->contacts()
+                    ->whereNotNull('email')
+                    ->whereNotIn('id', function ($query) use ($campaign) {
+                        $query->select('contact_id')
+                            ->from('campaign_contacts')
+                            ->where('campaign_id', $campaign->id);
+                    })
+                    ->get();
+                
+                // Add all company contacts to the campaign
+                $contactData = $contacts->map(function ($contact) use ($campaign) {
+                    return [
+                        'campaign_id' => $campaign->id,
+                        'contact_id' => $contact->id,
+                        'status' => 'pending',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                })->toArray();
+                
+                if (!empty($contactData)) {
+                    CampaignContact::insert($contactData);
+                    $contactsAdded += count($contactData);
+                }
+            }
+            
+            return $contactsAdded;
+        });
+    }
+    
+    /**
+     * Get a formatted list of recipients for a company.
+     * 
+     * @return string Formatted recipient list (e.g., "Doug, Angela, and John")
+     */
+    public function getRecipientsListForCompany(Company $company): string
+    {
+        $contacts = $company->contacts()->whereNotNull('email')->get();
+        return RecipientsFormatter::format($contacts);
+    }
+    
+    /**
      * Get campaign statistics.
      */
     public function getStatistics(Campaign $campaign): array
@@ -186,6 +287,8 @@ class CampaignService
             'responded' => 0,
             'bounced' => 0,
             'failed' => 0,
+            'cancelled' => 0,
+            'unsubscribed' => 0,
         ];
 
         // Merge with actual counts

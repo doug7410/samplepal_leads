@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft,
+  Building,
   Calendar,
   CheckCircle,
   Clock,
@@ -15,6 +16,7 @@ import {
   Pause,
   Play,
   Send,
+  User,
   Users,
   XCircle,
   ChevronLeft,
@@ -152,8 +154,12 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                       size="sm"
                       variant="outline"
                       className="flex items-center gap-1"
-                      disabled={statistics.total === 0}
-                      title={statistics.total === 0 ? "Add contacts before scheduling" : ""}
+                      disabled={campaign.type === 'contact' ? statistics.total === 0 : !campaign.companies || campaign.companies.length === 0}
+                      title={
+                        campaign.type === 'contact' 
+                          ? (statistics.total === 0 ? "Add contacts before scheduling" : "") 
+                          : (!campaign.companies || campaign.companies.length === 0 ? "Add companies before scheduling" : "")
+                      }
                     >
                       <Calendar size={14} />
                       <span>Schedule</span>
@@ -203,8 +209,12 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                   size="sm" 
                   onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
                   className="flex items-center gap-1"
-                  disabled={statistics.total === 0}
-                  title={statistics.total === 0 ? "Add contacts before sending" : ""}
+                  disabled={campaign.type === 'contact' ? statistics.total === 0 : !campaign.companies || campaign.companies.length === 0}
+                  title={
+                    campaign.type === 'contact' 
+                      ? (statistics.total === 0 ? "Add contacts before sending" : "") 
+                      : (!campaign.companies || campaign.companies.length === 0 ? "Add companies before sending" : "")
+                  }
                 >
                   <Send size={14} />
                   <span>Send Now</span>
@@ -317,6 +327,24 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
             <h2 className="text-lg font-semibold mb-4">Campaign Details</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+              {/* Campaign Type */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Campaign Type</h3>
+                <p className="text-base flex items-center gap-1">
+                  {campaign.type === 'company' ? (
+                    <>
+                      <Building size={16} className="text-gray-500" />
+                      <span>Company Campaign</span>
+                    </>
+                  ) : (
+                    <>
+                      <User size={16} className="text-gray-500" />
+                      <span>Individual Contacts</span>
+                    </>
+                  )}
+                </p>
+              </div>
+              
               {/* Subject Line */}
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Subject Line</h3>
@@ -386,7 +414,19 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
               <h3 className="text-sm font-medium text-gray-500 mb-2">Recipients</h3>
               <div className="flex items-center gap-2">
                 <Users size={20} className="text-gray-500" />
-                <span className="text-xl font-semibold">{statistics.total}</span>
+                {campaign.type === 'company' && statistics.total === 0 && campaign.companies?.length > 0 ? (
+                  <div>
+                    <span className="text-xl font-semibold">0</span>
+                    <div className="text-xs text-amber-600 mt-1">
+                      Recipients will be processed when you send the campaign
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {campaign.companies.length} {campaign.companies.length === 1 ? 'company' : 'companies'} selected
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-xl font-semibold">{statistics.total}</span>
+                )}
               </div>
             </div>
             
