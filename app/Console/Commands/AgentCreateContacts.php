@@ -34,7 +34,7 @@ class AgentCreateContacts extends Command
             ->take($limit)->get();
 
         $count = 0;
-        
+
         foreach ($companies as $company) {
             $this->info("Queuing job for company: {$company->company_name} ({$company->website})");
             CreateContactsForCompany::dispatch($company);

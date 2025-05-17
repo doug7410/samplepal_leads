@@ -27,20 +27,20 @@ class EmailEventHandler
         // Extract campaign_id and contact_id from the message's headers or metadata
         $message = $event->message;
         $headers = $message->getHeaders();
-        
+
         // Debug log to help diagnose issues
         try {
             // Convert headers to array safely since it might be a Generator
             $headerCollection = $headers->all();
             $headerKeys = [];
-            
+
             if (is_array($headerCollection)) {
                 $headerKeys = array_keys($headerCollection);
             } else {
                 // Handle Generator by converting to array first
                 $headerKeys = array_keys(iterator_to_array($headerCollection, true));
             }
-                
+
             Log::debug('Processing message sent event', [
                 'headers' => $headerKeys,
                 'message_class' => get_class($message),
@@ -52,10 +52,10 @@ class EmailEventHandler
                 'message_class' => get_class($message),
             ]);
         }
-        
+
         $campaignId = null;
         $contactId = null;
-        
+
         // Try to extract from headers
         if ($headers->has('X-Campaign-ID')) {
             $header = $headers->get('X-Campaign-ID');
@@ -66,7 +66,7 @@ class EmailEventHandler
                 $campaignId = (int) $header->getBodyAsString();
             }
         }
-        
+
         if ($headers->has('X-Contact-ID')) {
             $header = $headers->get('X-Contact-ID');
             // Handle both array or single object cases
@@ -76,44 +76,44 @@ class EmailEventHandler
                 $contactId = (int) $header->getBodyAsString();
             }
         }
-        
+
         // If headers aren't available, try to extract from metadata or tags
-        if ((!$campaignId || !$contactId) && method_exists($message, 'getMetadata')) {
+        if ((! $campaignId || ! $contactId) && method_exists($message, 'getMetadata')) {
             $metadata = $message->getMetadata();
             $campaignId = $metadata['campaign_id'] ?? $campaignId;
             $contactId = $metadata['contact_id'] ?? $contactId;
         }
-        
+
         // Log the event
         if ($campaignId && $contactId) {
             Log::info("Message sent for campaign #{$campaignId} to contact #{$contactId}");
-            
+
             try {
                 // Find campaign and contact
                 $campaign = Campaign::find($campaignId);
                 $contact = Contact::find($contactId);
-                
+
                 if ($campaign && $contact) {
                     // Update campaign contact status
                     $campaignContact = CampaignContact::where('campaign_id', $campaignId)
                         ->where('contact_id', $contactId)
                         ->first();
-                        
+
                     if ($campaignContact && $campaignContact->status === 'pending') {
                         $campaignContact->status = 'sent';
                         $campaignContact->sent_at = now();
                         $campaignContact->save();
                     }
-                    
+
                     // Record sent event
                     $this->recordEvent($campaign, $contact, 'sent');
                 }
             } catch (\Exception $e) {
-                Log::error("Error processing message sent event: " . $e->getMessage());
+                Log::error('Error processing message sent event: '.$e->getMessage());
             }
         }
     }
-    
+
     /**
      * Record an email event.
      */
@@ -128,10 +128,10 @@ class EmailEventHandler
                 'event_time' => now(),
                 'event_data' => $eventData,
             ]);
-            
+
             $event->save();
         } catch (\Exception $e) {
-            Log::error('Error recording email event: ' . $e->getMessage());
+            Log::error('Error recording email event: '.$e->getMessage());
         }
     }
 }

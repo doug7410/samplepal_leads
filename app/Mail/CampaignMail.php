@@ -22,8 +22,7 @@ class CampaignMail extends Mailable
         public Campaign $campaign,
         public Contact $contact,
         public string $htmlContent
-    ) {
-    }
+    ) {}
 
     /**
      * Get the message envelope.
@@ -33,7 +32,7 @@ class CampaignMail extends Mailable
         $fromEmail = $this->campaign->from_email ?? Config::get('mail.from.address');
         $fromName = $this->campaign->from_name ?? Config::get('mail.from.name');
         $replyTo = $this->campaign->reply_to ?? $fromEmail;
-        
+
         $envelope = new Envelope(
             from: new \Illuminate\Mail\Mailables\Address($fromEmail, $fromName),
             replyTo: [new \Illuminate\Mail\Mailables\Address($replyTo)],
@@ -44,7 +43,7 @@ class CampaignMail extends Mailable
                 'contact_id' => $this->contact->id,
             ],
         );
-        
+
         return $envelope;
     }
 
@@ -67,25 +66,21 @@ class CampaignMail extends Mailable
     {
         return [];
     }
-    
+
     /**
      * Parse template variables in content.
-     *
-     * @param string $content
-     * @param Contact $contact
-     * @return string
      */
     protected function parseTemplate(string $content, Contact $contact): string
     {
         $replacements = [
             '{{first_name}}' => $contact->first_name,
             '{{last_name}}' => $contact->last_name,
-            '{{full_name}}' => trim($contact->first_name . ' ' . $contact->last_name),
+            '{{full_name}}' => trim($contact->first_name.' '.$contact->last_name),
             '{{email}}' => $contact->email,
             '{{company}}' => optional($contact->company)->name ?? '',
             '{{job_title}}' => $contact->job_title ?? '',
         ];
-        
+
         return str_replace(array_keys($replacements), array_values($replacements), $content);
     }
 }

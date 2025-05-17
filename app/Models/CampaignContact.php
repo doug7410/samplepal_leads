@@ -9,18 +9,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CampaignContact extends Model
 {
     use HasFactory;
-    
+
     // Status constants
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_PROCESSING = 'processing';
+
     public const STATUS_SENT = 'sent';
+
     public const STATUS_DELIVERED = 'delivered';
+
     public const STATUS_OPENED = 'opened';
+
     public const STATUS_CLICKED = 'clicked';
+
     public const STATUS_RESPONDED = 'responded';
+
     public const STATUS_BOUNCED = 'bounced';
+
     public const STATUS_FAILED = 'failed';
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -39,7 +47,7 @@ class CampaignContact extends Model
         'failed_at',
         'failure_reason',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -53,7 +61,7 @@ class CampaignContact extends Model
         'responded_at' => 'datetime',
         'failed_at' => 'datetime',
     ];
-    
+
     /**
      * Get the campaign associated with this record.
      */
@@ -61,7 +69,7 @@ class CampaignContact extends Model
     {
         return $this->belongsTo(Campaign::class);
     }
-    
+
     /**
      * Get the contact associated with this record.
      */

@@ -21,7 +21,7 @@ return [
                 'origin' => 'https://genlyte-us.bullseyelocations.com',
                 'pragma' => 'no-cache',
                 'referer' => 'https://genlyte-us.bullseyelocations.com/',
-                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
             ],
         ],
         'cooper' => [
@@ -29,7 +29,7 @@ return [
             'headers' => [
                 'accept' => 'application/json, text/plain, */*',
                 'accept-language' => 'en-US,en;q=0.9',
-                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
             ],
         ],
         'acuity' => [
@@ -37,7 +37,7 @@ return [
             'headers' => [
                 'accept' => 'application/json, text/plain, */*',
                 'accept-language' => 'en-US,en;q=0.9',
-                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+                'user-agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
             ],
         ],
     ],
@@ -237,7 +237,7 @@ return [
             'URL' => 'website',
             'EmailAddress' => 'email',
             'ContactName' => 'contact_name',
-            'MobileNumber' => 'contact_phone'
+            'MobileNumber' => 'contact_phone',
         ],
         'cooper' => [
             'Name' => 'company_name',
@@ -251,7 +251,7 @@ return [
             'URL' => 'website',
             'EmailAddress' => 'email',
             'ContactName' => 'contact_name',
-            'MobileNumber' => 'contact_phone'
+            'MobileNumber' => 'contact_phone',
         ],
         'acuity' => [
             'Business' => 'company_name',
@@ -261,8 +261,8 @@ return [
             'PostalCode' => 'zip_code',
             'Locality' => 'city_or_region',
             'AdminDistrict' => 'state',
-            'CountryRegion' => 'country', 
-            'Web' => 'website'
+            'CountryRegion' => 'country',
+            'Web' => 'website',
         ],
     ],
 ];

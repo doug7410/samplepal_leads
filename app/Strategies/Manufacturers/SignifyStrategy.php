@@ -4,10 +4,9 @@ namespace App\Strategies\Manufacturers;
 
 use App\Strategies\ManufacturerStrategy;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\File;
 
 class SignifyStrategy implements ManufacturerStrategy
 {
@@ -78,12 +77,12 @@ class SignifyStrategy implements ManufacturerStrategy
                 Log::info("Response data saved to {$outputPath}");
 
                 // Extract the results
-                if (isset($data['ResultList']) && !empty($data['ResultList'])) {
+                if (isset($data['ResultList']) && ! empty($data['ResultList'])) {
                     $cityResults = $data['ResultList'];
 
                     // Filter to include only sales agents and exclude distributors
-                    $cityResults = array_filter($cityResults, function($result) {
-                        if (!isset($result['CategoryHierarchy']) || !is_array($result['CategoryHierarchy'])) {
+                    $cityResults = array_filter($cityResults, function ($result) {
+                        if (! isset($result['CategoryHierarchy']) || ! is_array($result['CategoryHierarchy'])) {
                             return false;
                         }
 
@@ -100,14 +99,14 @@ class SignifyStrategy implements ManufacturerStrategy
 
                     // Add only new records (not seen before)
                     foreach ($cityResults as $result) {
-                        if (!in_array($result['Id'], $seenIds)) {
+                        if (! in_array($result['Id'], $seenIds)) {
                             $allResults[] = $result;
                             $seenIds[] = $result['Id'];
                         }
                     }
 
-                    Log::info("Found " . count($cityResults) . " sales agents in {$city}, {$state} (" .
-                             count(array_unique(array_column($cityResults, 'Id'))) . " unique)");
+                    Log::info('Found '.count($cityResults)." sales agents in {$city}, {$state} (".
+                             count(array_unique(array_column($cityResults, 'Id'))).' unique)');
                 } else {
                     Log::info("No results found for {$city}, {$state}");
                 }
@@ -116,17 +115,19 @@ class SignifyStrategy implements ManufacturerStrategy
                 usleep(1000000); // 1 second delay
 
             } catch (\Exception $e) {
-                Log::error("Error fetching data for {$city}, {$state}: " . $e->getMessage());
+                Log::error("Error fetching data for {$city}, {$state}: ".$e->getMessage());
             }
         }
 
-        if (!empty($allResults)) {
+        if (! empty($allResults)) {
             $totalFound = count($allResults);
             Log::info("Found a total of {$totalFound} unique Signify sales agents across all cities");
+
             // Map the data to our standardized format
             return $this->mapToStandardFormat($allResults);
         } else {
-            Log::warning("No Signify sales agents found in any city");
+            Log::warning('No Signify sales agents found in any city');
+
             return collect([]);
         }
     }
@@ -134,9 +135,9 @@ class SignifyStrategy implements ManufacturerStrategy
     /**
      * Build the URL with query parameters
      *
-     * @param string $city The city name
-     * @param string $state The state code
-     * @param string $searchDisplayText The search display text
+     * @param  string  $city  The city name
+     * @param  string  $state  The state code
+     * @param  string  $searchDisplayText  The search display text
      * @return string The complete URL
      */
     protected function buildUrl(string $city, string $state, string $searchDisplayText): string
@@ -160,7 +161,7 @@ class SignifyStrategy implements ManufacturerStrategy
     /**
      * Reconstruct a URL from its component parts
      *
-     * @param array $parsedUrl The array of URL components
+     * @param  array  $parsedUrl  The array of URL components
      * @return string The reconstructed URL
      */
     protected function unparseUrl(array $parsedUrl): string
@@ -168,7 +169,7 @@ class SignifyStrategy implements ManufacturerStrategy
         // Start with the scheme and host
         $url = '';
         if (isset($parsedUrl['scheme'])) {
-            $url .= $parsedUrl['scheme'] . '://';
+            $url .= $parsedUrl['scheme'].'://';
         }
 
         if (isset($parsedUrl['host'])) {
@@ -177,7 +178,7 @@ class SignifyStrategy implements ManufacturerStrategy
 
         // Add port if specified
         if (isset($parsedUrl['port'])) {
-            $url .= ':' . $parsedUrl['port'];
+            $url .= ':'.$parsedUrl['port'];
         }
 
         // Add path
@@ -187,12 +188,12 @@ class SignifyStrategy implements ManufacturerStrategy
 
         // Add query
         if (isset($parsedUrl['query'])) {
-            $url .= '?' . $parsedUrl['query'];
+            $url .= '?'.$parsedUrl['query'];
         }
 
         // Add fragment
         if (isset($parsedUrl['fragment'])) {
-            $url .= '#' . $parsedUrl['fragment'];
+            $url .= '#'.$parsedUrl['fragment'];
         }
 
         return $url;
@@ -201,7 +202,7 @@ class SignifyStrategy implements ManufacturerStrategy
     /**
      * Map the Signify API data to our standardized format
      *
-     * @param array $data The raw data from the Signify API
+     * @param  array  $data  The raw data from the Signify API
      * @return Collection The standardized data
      */
     protected function mapToStandardFormat(array $data): Collection
@@ -220,7 +221,7 @@ class SignifyStrategy implements ManufacturerStrategy
             }
 
             // Handle missing fields
-            if (!isset($mappedData['country'])) {
+            if (! isset($mappedData['country'])) {
                 $mappedData['country'] = 'USA';
             }
 

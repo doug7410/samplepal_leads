@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamp('failed_at')->nullable();
             $table->text('failure_reason')->nullable();
             $table->timestamps();
-            
+
             // Ensure each contact is only added once per campaign
             $table->unique(['campaign_id', 'contact_id']);
         });

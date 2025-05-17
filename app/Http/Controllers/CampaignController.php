@@ -15,7 +15,7 @@ use Inertia\Response;
 class CampaignController extends Controller
 {
     protected CampaignService $campaignService;
-    
+
     /**
      * Constructor
      */
@@ -23,7 +23,7 @@ class CampaignController extends Controller
     {
         $this->campaignService = $campaignService;
     }
-    
+
     /**
      * Display a listing of campaigns.
      */
@@ -34,12 +34,12 @@ class CampaignController extends Controller
             ->latest()
             ->paginate(10)
             ->withQueryString();
-            
+
         return Inertia::render('campaigns/index', [
             'campaigns' => $campaigns,
         ]);
     }
-    
+
     /**
      * Show the form for creating a new campaign.
      */
@@ -47,13 +47,13 @@ class CampaignController extends Controller
     {
         $companies = \App\Models\Company::orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
-        
+
         return Inertia::render('campaigns/create', [
             'companies' => $companies,
             'contacts' => $contacts,
         ]);
     }
-    
+
     /**
      * Store a newly created campaign in storage.
      */
@@ -71,40 +71,40 @@ class CampaignController extends Controller
             'contact_ids' => 'nullable|array',
             'scheduled_at' => 'nullable|date',
         ]);
-        
+
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = Campaign::STATUS_DRAFT;
-        
+
         $campaign = $this->campaignService->createCampaign($validated);
-        
+
         // Add contacts from specific IDs if provided
-        if (isset($validated['contact_ids']) && !empty($validated['contact_ids'])) {
+        if (isset($validated['contact_ids']) && ! empty($validated['contact_ids'])) {
             $this->campaignService->addContacts($campaign, $validated['contact_ids']);
         }
         // Or add contacts from filter criteria
-        elseif (isset($validated['filter_criteria']) && !empty($validated['filter_criteria'])) {
+        elseif (isset($validated['filter_criteria']) && ! empty($validated['filter_criteria'])) {
             $this->campaignService->addContactsFromFilter($campaign, $validated['filter_criteria']);
         }
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign created successfully.');
     }
-    
+
     /**
      * Display the specified campaign.
      */
     public function show(Campaign $campaign): Response
     {
         $campaign->load(['campaignContacts.contact']);
-        
+
         $statistics = $this->campaignService->getStatistics($campaign);
-        
+
         return Inertia::render('campaigns/show', [
             'campaign' => $campaign,
             'statistics' => $statistics,
         ]);
     }
-    
+
     /**
      * Show the form for editing the specified campaign.
      */
@@ -112,14 +112,14 @@ class CampaignController extends Controller
     {
         // Load the campaign with its contacts
         $campaign->load('campaignContacts');
-        
+
         $companies = \App\Models\Company::orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
-        
+
         // Get contacts associated with this campaign
         $contactIds = $campaign->campaignContacts->pluck('contact_id')->toArray();
         $selectedContacts = Contact::whereIn('id', $contactIds)->get();
-        
+
         return Inertia::render('campaigns/edit', [
             'campaign' => $campaign,
             'companies' => $companies,
@@ -127,7 +127,7 @@ class CampaignController extends Controller
             'selectedContacts' => $selectedContacts,
         ]);
     }
-    
+
     /**
      * Update the specified campaign in storage.
      */
@@ -138,7 +138,7 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be edited.');
         }
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -152,24 +152,24 @@ class CampaignController extends Controller
             'contact_ids' => 'nullable|array',
             'contact_ids.*' => 'exists:contacts,id',
         ]);
-        
+
         $this->campaignService->updateCampaign($campaign, $validated);
-        
+
         // Update campaign contacts if provided
         if (isset($validated['contact_ids'])) {
             // Remove all existing contacts
             $campaign->campaignContacts()->delete();
-            
+
             // Add new contacts
-            if (!empty($validated['contact_ids'])) {
+            if (! empty($validated['contact_ids'])) {
                 $this->campaignService->addContacts($campaign, $validated['contact_ids']);
             }
         }
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign updated successfully.');
     }
-    
+
     /**
      * Remove the specified campaign from storage.
      */
@@ -180,13 +180,13 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be deleted.');
         }
-        
+
         $this->campaignService->deleteCampaign($campaign);
-        
+
         return redirect()->route('campaigns.index')
             ->with('success', 'Campaign deleted successfully.');
     }
-    
+
     /**
      * Add contacts to a campaign.
      */
@@ -197,18 +197,18 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be modified.');
         }
-        
+
         $validated = $request->validate([
             'contact_ids' => 'required|array',
             'contact_ids.*' => 'exists:contacts,id',
         ]);
-        
+
         $count = $this->campaignService->addContacts($campaign, $validated['contact_ids']);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts added to campaign.");
     }
-    
+
     /**
      * Remove contacts from a campaign.
      */
@@ -219,18 +219,18 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be modified.');
         }
-        
+
         $validated = $request->validate([
             'contact_ids' => 'required|array',
             'contact_ids.*' => 'exists:contacts,id',
         ]);
-        
+
         $count = $this->campaignService->removeContacts($campaign, $validated['contact_ids']);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts removed from campaign.");
     }
-    
+
     /**
      * Schedule a campaign for sending.
      */
@@ -241,43 +241,43 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft campaigns can be scheduled.');
         }
-        
+
         // Check if the campaign has contacts
         if ($campaign->campaignContacts()->count() === 0) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Cannot schedule a campaign with no contacts. Please add contacts first.');
         }
-        
+
         $validated = $request->validate([
             'scheduled_at' => 'required|date|after:now',
         ]);
-        
+
         $this->campaignService->updateCampaign($campaign, [
             'status' => Campaign::STATUS_SCHEDULED,
             'scheduled_at' => $validated['scheduled_at'],
         ]);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign scheduled successfully.');
     }
-    
+
     /**
      * Pause a campaign.
      */
     public function pause(Campaign $campaign): RedirectResponse
     {
         // Only allow pausing in-progress or scheduled campaigns
-        if (!in_array($campaign->status, [Campaign::STATUS_IN_PROGRESS, Campaign::STATUS_SCHEDULED])) {
+        if (! in_array($campaign->status, [Campaign::STATUS_IN_PROGRESS, Campaign::STATUS_SCHEDULED])) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only in-progress or scheduled campaigns can be paused.');
         }
-        
+
         $this->campaignService->updateStatus($campaign, Campaign::STATUS_PAUSED);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign paused successfully.');
     }
-    
+
     /**
      * Resume a campaign.
      */
@@ -288,75 +288,75 @@ class CampaignController extends Controller
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only paused campaigns can be resumed.');
         }
-        
-        $status = $campaign->scheduled_at && $campaign->scheduled_at->isFuture() 
-            ? Campaign::STATUS_SCHEDULED 
+
+        $status = $campaign->scheduled_at && $campaign->scheduled_at->isFuture()
+            ? Campaign::STATUS_SCHEDULED
             : Campaign::STATUS_IN_PROGRESS;
-            
+
         $this->campaignService->updateStatus($campaign, $status);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign resumed successfully.');
     }
-    
+
     /**
      * Stop a campaign and return it to draft status.
      */
     public function stop(Campaign $campaign): RedirectResponse
     {
         // Only allow stopping campaigns that are in progress, scheduled, paused, or failed
-        if (!in_array($campaign->status, [
-            Campaign::STATUS_IN_PROGRESS, 
-            Campaign::STATUS_SCHEDULED, 
-            Campaign::STATUS_PAUSED, 
-            Campaign::STATUS_FAILED
+        if (! in_array($campaign->status, [
+            Campaign::STATUS_IN_PROGRESS,
+            Campaign::STATUS_SCHEDULED,
+            Campaign::STATUS_PAUSED,
+            Campaign::STATUS_FAILED,
         ])) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'This campaign cannot be stopped.');
         }
-        
+
         // Update campaign contacts that are still pending, processing, or failed to be reset
         $campaign->campaignContacts()
             ->whereIn('status', [
-                CampaignContact::STATUS_PENDING, 
-                CampaignContact::STATUS_PROCESSING, 
-                CampaignContact::STATUS_FAILED
+                CampaignContact::STATUS_PENDING,
+                CampaignContact::STATUS_PROCESSING,
+                CampaignContact::STATUS_FAILED,
             ])
             ->update([
-                'status' => CampaignContact::STATUS_PENDING, 
-                'failed_at' => null, 
-                'failure_reason' => null
+                'status' => CampaignContact::STATUS_PENDING,
+                'failed_at' => null,
+                'failure_reason' => null,
             ]);
-        
+
         // Set the campaign back to draft status
         $this->campaignService->updateStatus($campaign, Campaign::STATUS_DRAFT);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign stopped and reset to draft successfully.');
     }
-    
+
     /**
      * Send a campaign immediately.
      */
     public function send(Campaign $campaign): RedirectResponse
     {
         // Only allow sending draft or scheduled campaigns
-        if (!in_array($campaign->status, [Campaign::STATUS_DRAFT, Campaign::STATUS_SCHEDULED])) {
+        if (! in_array($campaign->status, [Campaign::STATUS_DRAFT, Campaign::STATUS_SCHEDULED])) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Only draft or scheduled campaigns can be sent immediately.');
         }
-        
+
         // Check if the campaign has contacts
         if ($campaign->campaignContacts()->count() === 0) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Cannot send campaign with no contacts.');
         }
-        
+
         $this->campaignService->updateStatus($campaign, Campaign::STATUS_IN_PROGRESS);
-        
+
         // Dispatch the campaign processing job
         ProcessCampaignJob::dispatch($campaign);
-        
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign is being sent.');
     }

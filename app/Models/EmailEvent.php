@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmailEvent extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -25,7 +25,7 @@ class EmailEvent extends Model
         'ip_address',
         'user_agent',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -35,7 +35,7 @@ class EmailEvent extends Model
         'event_time' => 'datetime',
         'event_data' => 'json',
     ];
-    
+
     /**
      * Get the campaign associated with this event.
      */
@@ -43,7 +43,7 @@ class EmailEvent extends Model
     {
         return $this->belongsTo(Campaign::class);
     }
-    
+
     /**
      * Get the contact associated with this event.
      */

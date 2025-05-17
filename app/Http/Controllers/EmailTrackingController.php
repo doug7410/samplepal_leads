@@ -33,7 +33,7 @@ class EmailTrackingController extends Controller
         $token = $request->query('token');
 
         // Validate the token
-        if (!$this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
+        if (! $this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
             return response('Invalid token', 403);
         }
 
@@ -57,7 +57,7 @@ class EmailTrackingController extends Controller
         $encodedUrl = $request->query('url');
 
         // Validate the token
-        if (!$this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
+        if (! $this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
             return response('Invalid token', 403);
         }
 
@@ -73,7 +73,8 @@ class EmailTrackingController extends Controller
             // Redirect to the original URL
             return redirect($url);
         } catch (\Exception $e) {
-            Log::error('Error tracking click: ' . $e->getMessage());
+            Log::error('Error tracking click: '.$e->getMessage());
+
             return response('Error processing link', 500);
         }
     }
@@ -97,24 +98,26 @@ class EmailTrackingController extends Controller
 
             if (config('app.env') === 'production') {
                 // In production, we strictly verify signatures
-                if (!$signature || !$this->verifyResendSignature($payload, $signature, $webhookSecret)) {
+                if (! $signature || ! $this->verifyResendSignature($payload, $signature, $webhookSecret)) {
                     Log::warning('Invalid webhook signature in production', [
                         'signature' => $signature,
                         'svix_id' => $request->header('Svix-Id'),
-                        'timestamp' => $request->header('Svix-Timestamp')
+                        'timestamp' => $request->header('Svix-Timestamp'),
                     ]);
+
                     return response('Invalid signature', 403);
                 }
             } else {
                 // In development, log but don't block on invalid signatures
                 $isValid = $this->verifyResendSignature($payload, $signature, $webhookSecret);
-                Log::info('Signature verification result: ' . ($isValid ? 'valid' : 'invalid'));
+                Log::info('Signature verification result: '.($isValid ? 'valid' : 'invalid'));
             }
         }
 
         // Verify it's a valid Resend event
-        if (!isset($payload['type'])) {
+        if (! isset($payload['type'])) {
             Log::warning('Invalid webhook payload', ['payload' => $payload]);
+
             return response('Invalid payload', 400);
         }
 
@@ -153,7 +156,7 @@ class EmailTrackingController extends Controller
         Log::debug('Extracted campaign and contact IDs', [
             'campaignId' => $campaignId,
             'contactId' => $contactId,
-            'headers' => $headers
+            'headers' => $headers,
         ]);
 
         // If we have campaign and contact IDs, record the event
@@ -171,12 +174,12 @@ class EmailTrackingController extends Controller
                 Log::info('Recorded email event', [
                     'event' => $event,
                     'campaign' => $campaignId,
-                    'contact' => $contactId
+                    'contact' => $contactId,
                 ]);
             } else {
                 Log::warning('Campaign or contact not found', [
                     'campaignId' => $campaignId,
-                    'contactId' => $contactId
+                    'contactId' => $contactId,
                 ]);
             }
         } else {
@@ -188,6 +191,7 @@ class EmailTrackingController extends Controller
 
     /**
      * Verify Resend webhook signature using Svix specification
+     *
      * @see https://docs.svix.com/receiving/verifying-payloads/how-to-verify
      */
     protected function verifyResendSignature(array $payload, string $signatureHeader, string $secret): bool
@@ -201,8 +205,9 @@ class EmailTrackingController extends Controller
             $messageId = request()->header('Svix-Id');
             $timestamp = request()->header('Svix-Timestamp');
 
-            if (!$messageId || !$timestamp || !$signatureHeader) {
+            if (! $messageId || ! $timestamp || ! $signatureHeader) {
                 Log::error('Missing required Svix headers');
+
                 return false;
             }
 
@@ -210,19 +215,21 @@ class EmailTrackingController extends Controller
             $tolerance = 5 * 60; // 5 minutes in seconds
             if (abs(time() - intval($timestamp)) > $tolerance) {
                 Log::warning('Webhook timestamp is too old');
+
                 return false;
             }
 
             // Parse signature header (format: "v1,signature")
-            if (!preg_match('/^v1,(.+)$/', $signatureHeader, $matches)) {
+            if (! preg_match('/^v1,(.+)$/', $signatureHeader, $matches)) {
                 Log::error('Invalid signature format');
+
                 return false;
             }
 
             $signature = $matches[1];
 
             // Construct the signed payload string exactly as Svix does
-            $toSign = $messageId . '.' . $timestamp . '.' . $bodyContent;
+            $toSign = $messageId.'.'.$timestamp.'.'.$bodyContent;
 
             // Calculate our signature using HMAC SHA-256 algorithm
             $expectedSignature = base64_encode(
@@ -232,7 +239,8 @@ class EmailTrackingController extends Controller
             // Verify using constant-time comparison to prevent timing attacks
             return hash_equals($expectedSignature, $signature);
         } catch (\Exception $e) {
-            Log::error('Error verifying Resend signature: ' . $e->getMessage());
+            Log::error('Error verifying Resend signature: '.$e->getMessage());
+
             return false;
         }
     }
@@ -297,14 +305,14 @@ class EmailTrackingController extends Controller
             // Update contact deal status for opened/clicked if not already in a more advanced state
             if (in_array($eventType, ['opened', 'clicked']) &&
                 $contact->deal_status === 'none' &&
-                !$contact->has_been_contacted) {
+                ! $contact->has_been_contacted) {
 
                 $contact->has_been_contacted = true;
                 $contact->deal_status = 'contacted';
                 $contact->save();
             }
         } catch (\Exception $e) {
-            Log::error('Error recording email event: ' . $e->getMessage());
+            Log::error('Error recording email event: '.$e->getMessage());
         }
     }
 
@@ -336,7 +344,8 @@ class EmailTrackingController extends Controller
 
             return response('Success', 200);
         } catch (\Exception $e) {
-            Log::error('Error marking contact as responded: ' . $e->getMessage());
+            Log::error('Error marking contact as responded: '.$e->getMessage());
+
             return response('Error', 500);
         }
     }

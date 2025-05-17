@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-        
+
         // Run the Kiwi Tech Lab test seeder
         $this->call(KiwiTestSeeder::class);
     }

@@ -4,9 +4,9 @@ namespace App\Strategies\Manufacturers;
 
 use App\Strategies\ManufacturerStrategy;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\File;
 
 class AcuityStrategy implements ManufacturerStrategy
 {
@@ -62,7 +62,8 @@ class AcuityStrategy implements ManufacturerStrategy
             // Map the data to our standardized format
             return $this->mapToStandardFormat($data);
         } catch (\Exception $e) {
-            Log::error("Error fetching Acuity data: " . $e->getMessage());
+            Log::error('Error fetching Acuity data: '.$e->getMessage());
+
             return collect([]);
         }
     }
@@ -70,7 +71,7 @@ class AcuityStrategy implements ManufacturerStrategy
     /**
      * Map the Acuity API data to our standardized format
      *
-     * @param array $data The raw data from the Acuity API
+     * @param  array  $data  The raw data from the Acuity API
      * @return Collection The standardized data
      */
     protected function mapToStandardFormat(array $data): Collection
@@ -83,13 +84,13 @@ class AcuityStrategy implements ManufacturerStrategy
 
             // Map fields based on the configuration
             foreach ($this->fieldMapping as $sourceField => $targetField) {
-                if (isset($item[$sourceField]) && !empty($item[$sourceField])) {
+                if (isset($item[$sourceField]) && ! empty($item[$sourceField])) {
                     $mappedData[$targetField] = $item[$sourceField];
                 }
             }
 
             // Handle missing fields
-            if (!isset($mappedData['country'])) {
+            if (! isset($mappedData['country'])) {
                 $mappedData['country'] = 'USA';
             }
 

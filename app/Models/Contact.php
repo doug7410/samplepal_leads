@@ -60,18 +60,18 @@ class Contact extends Model
     {
         return $this->belongsTo(Company::class);
     }
-    
+
     /**
      * Get the campaigns associated with this contact.
      */
     public function campaigns(): BelongsToMany
     {
         return $this->belongsToMany(Campaign::class, 'campaign_contacts')
-            ->withPivot('status', 'message_id', 'sent_at', 'delivered_at', 'opened_at', 
+            ->withPivot('status', 'message_id', 'sent_at', 'delivered_at', 'opened_at',
                 'clicked_at', 'responded_at', 'failed_at', 'failure_reason')
             ->withTimestamps();
     }
-    
+
     /**
      * Get the email events for this contact.
      */
@@ -79,7 +79,7 @@ class Contact extends Model
     {
         return $this->hasMany(EmailEvent::class);
     }
-    
+
     /**
      * Get the campaign contacts records for this contact.
      */

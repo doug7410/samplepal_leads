@@ -34,17 +34,17 @@ class ImportManufacturerReps extends Command
             // Get the manufacturer representatives
             $this->info("Collecting representatives from {$manufacturerName}...");
             $representatives = $manufacturersService->getManufacturerReps($manufacturerName);
-            
-            $this->info("Found " . $representatives->count() . " representatives.");
-            
+
+            $this->info('Found '.$representatives->count().' representatives.');
+
             // Save the representatives to the database
-            $this->info("Saving representatives to the database...");
+            $this->info('Saving representatives to the database...');
             $savedCompanies = $manufacturersService->saveRepresentatives($representatives);
-            
+
             // Output success message
             $this->newLine();
             $this->info("Successfully imported {$savedCompanies->count()} companies from {$manufacturerName}.");
-            
+
             // List the imported companies
             $this->table(
                 ['Company Name', 'Phone', 'Email', 'Location'],
@@ -53,19 +53,21 @@ class ImportManufacturerReps extends Command
                         'name' => $company->company_name,
                         'phone' => $company->company_phone,
                         'email' => $company->email,
-                        'location' => "{$company->city_or_region}, {$company->state}"
+                        'location' => "{$company->city_or_region}, {$company->state}",
                     ];
                 })
             );
-            
+
             return Command::SUCCESS;
         } catch (InvalidArgumentException $e) {
             $this->error($e->getMessage());
             $this->newLine();
             $this->info("Supported manufacturer: 'signify'");
+
             return Command::FAILURE;
         } catch (\Exception $e) {
-            $this->error("Error: " . $e->getMessage());
+            $this->error('Error: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
