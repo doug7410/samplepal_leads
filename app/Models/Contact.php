@@ -26,6 +26,8 @@ class Contact extends Model
         'office_phone',
         'job_title',
         'has_been_contacted',
+        'has_unsubscribed',
+        'unsubscribed_at',
         'deal_status',
         'notes',
         'relevance_score',
@@ -38,6 +40,8 @@ class Contact extends Model
      */
     protected $casts = [
         'has_been_contacted' => 'boolean',
+        'has_unsubscribed' => 'boolean',
+        'unsubscribed_at' => 'datetime',
     ];
 
     /**

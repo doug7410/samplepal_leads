@@ -25,11 +25,16 @@ class FooterProcessor extends EmailContentDecorator
         $campaignId = $campaign->id ?? 0;
         $contactId = $contact->id ?? 0;
 
-        $unsubscribeUrl = route('email.unsubscribe', [
-            'campaign' => $campaignId,
-            'contact' => $contactId,
-            'token' => $this->generateUnsubscribeToken($campaign, $contact),
-        ]);
+        try {
+            $unsubscribeUrl = route('email.unsubscribe', [
+                'campaign' => $campaignId,
+                'contact' => $contactId,
+                'token' => $this->generateUnsubscribeToken($campaign, $contact),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error generating unsubscribe URL: ' . $e->getMessage());
+            $unsubscribeUrl = '#'; // Fallback to a harmless URL if route generation fails
+        }
 
         $footer = "
         <hr style='margin-top: 30px; border-top: 1px solid #e0e0e0;'>

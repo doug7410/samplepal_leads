@@ -28,6 +28,10 @@ class CampaignContact extends Model
     public const STATUS_BOUNCED = 'bounced';
 
     public const STATUS_FAILED = 'failed';
+    
+    public const STATUS_UNSUBSCRIBED = 'unsubscribed';
+
+    public const STATUS_CANCELLED = 'cancelled';
 
     /**
      * The attributes that are mass assignable.
@@ -45,6 +49,7 @@ class CampaignContact extends Model
         'clicked_at',
         'responded_at',
         'failed_at',
+        'unsubscribed_at',
         'failure_reason',
     ];
 
@@ -60,6 +65,7 @@ class CampaignContact extends Model
         'clicked_at' => 'datetime',
         'responded_at' => 'datetime',
         'failed_at' => 'datetime',
+        'unsubscribed_at' => 'datetime',
     ];
 
     /**

@@ -45,5 +45,9 @@ Route::post('email/webhook', [App\Http\Controllers\EmailTrackingController::clas
     ->withoutMiddleware(['web']) // Skip web middleware which has CSRF protection
     ->name('email.webhook');
 
+// Unsubscribe route - should be accessible without authentication
+Route::get('email/unsubscribe/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'unsubscribe'])
+    ->name('email.unsubscribe');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

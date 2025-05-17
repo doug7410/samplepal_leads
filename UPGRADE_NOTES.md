@@ -54,3 +54,59 @@ You'll need to update your environment variables to use Resend. A sample configu
 3. Optional: Configure webhooks in the Resend dashboard to point to your `/email/webhook` endpoint
 
 See `.env.resend.example` for all configuration options.
+
+---
+
+# Email System Bug Fixes (2025-05-17)
+
+## Issues Fixed
+
+1. **Email Unsubscribe Route Error Fixed**
+   - Fixed "Route [email.unsubscribe] not defined" error in SendCampaignEmailJob
+   - Added robust error handling in FooterProcessor.php to gracefully handle missing routes
+   - Added proper PostgreSQL constraint handling for campaign_contacts.status field
+
+2. **Campaign Status Constraint Fix**
+   - Added proper PostgreSQL constraint handling for campaigns.status field to allow 'failed' status
+   - Ensured SQLite database schema in tests works correctly with all status values
+
+3. **CampaignContact Status Handling**
+   - Added missing STATUS_CANCELLED constant to CampaignContact model
+   - Added cancelled and unsubscribed to the list of allowed status values
+
+## Database Changes
+
+Three migrations were added:
+
+1. **2025_05_17_171941_update_campaign_contacts_add_cancelled_status.php**
+   - Adds 'cancelled' to the allowed values for campaign_contacts.status field
+
+2. **2025_05_17_172707_add_failed_status_to_campaigns.php**
+   - Adds 'failed' to the allowed values for campaigns.status field
+   
+3. **2025_05_17_173511_add_unsubscribe_tracking_to_tables.php**
+   - Adds unsubscribe tracking fields to contacts and campaign_contacts tables
+   - Adds 'unsubscribed' to the allowed values for campaign_contacts.status field
+
+## Additional Testing
+
+- Added a specialized test script (test_campaign_email.php) that can verify the unsubscribe functionality
+- Added browser test for the "Stop & Reset" feature
+- Added test coverage for campaign failure scenarios
+
+## How to Apply This Update
+
+1. Run the new migrations:
+   ```bash
+   php artisan migrate
+   ```
+
+2. Restart the queue worker:
+   ```bash
+   php artisan queue:restart
+   ```
+
+3. Verify that emails are sending correctly with the unsubscribe functionality:
+   ```bash
+   php test_campaign_email.php
+   ```

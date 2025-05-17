@@ -13,18 +13,19 @@ class StopCampaignCommand extends CampaignCommand
      */
     public function execute(): bool
     {
-        // Reset pending, processing, or failed contacts to pending state
-        $this->campaign->campaignContacts()
+        // Mark pending, processing, or failed contacts as cancelled
+        foreach ($this->campaign->campaignContacts()
             ->whereIn('status', [
                 CampaignContact::STATUS_PENDING,
                 CampaignContact::STATUS_PROCESSING,
                 CampaignContact::STATUS_FAILED,
-            ])
-            ->update([
-                'status' => CampaignContact::STATUS_PENDING,
-                'failed_at' => null,
-                'failure_reason' => null,
-            ]);
+            ])->get() as $contact) {
+            
+            $contact->status = 'cancelled'; // Use string directly instead of constant for now
+            $contact->failed_at = null;
+            $contact->failure_reason = null;
+            $contact->save();
+        }
 
         // Stop the campaign via the state pattern
         return $this->campaign->stop();

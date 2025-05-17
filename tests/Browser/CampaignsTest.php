@@ -3,6 +3,8 @@
 namespace Tests\Browser;
 
 use App\Models\Campaign;
+use App\Models\CampaignContact;
+use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
@@ -126,5 +128,85 @@ class CampaignsTest extends DuskTestCase
                 ->assertPathIs('/campaigns/' . $campaign->id)
                 ->assertSee($campaign->name);
         });
+    }
+
+    /**
+     * Test that the UI shows the "Stop & Reset" button for in-progress campaigns
+     */
+    public function test_in_progress_campaign_shows_stop_and_reset_button(): void
+    {
+        $user = User::factory()->create();
+        
+        // Create a campaign in the in_progress state
+        $campaign = Campaign::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Campaign to Stop',
+            'subject' => 'Test Subject',
+            'status' => Campaign::STATUS_IN_PROGRESS,
+        ]);
+        
+        $this->browse(function (Browser $browser) use ($user, $campaign) {
+            $browser->loginAs($user)
+                ->visit('/campaigns/' . $campaign->id)
+                ->assertPathIs('/campaigns/' . $campaign->id)
+                ->assertSee($campaign->name)
+                // We should see the Stop & Reset button when the campaign is in progress
+                ->assertSee('Stop & Reset');
+        });
+    }
+    
+    /**
+     * Test the functionality of the stop campaign action
+     * This is a non-browser test that directly calls the stop action
+     */
+    public function test_stop_action_updates_campaign_status_correctly(): void
+    {
+        $this->withoutMiddleware();
+        
+        // Create user and test data
+        $user = User::factory()->create();
+        
+        // Create a campaign in the in_progress state
+        $campaign = Campaign::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Campaign to Stop',
+            'subject' => 'Test Subject',
+            'status' => Campaign::STATUS_IN_PROGRESS,
+        ]);
+        
+        // Create a contact
+        $contact = Contact::factory()->create();
+        
+        // Add a campaign contact in pending status
+        $campaignContact = CampaignContact::create([
+            'campaign_id' => $campaign->id,
+            'contact_id' => $contact->id,
+            'status' => CampaignContact::STATUS_PENDING,
+        ]);
+        
+        // Get the command service from the container
+        $commandService = app(\App\Services\CampaignCommandService::class);
+        
+        // Directly call the stop method
+        $result = $commandService->stop($campaign);
+        
+        // Assert that the operation was successful
+        $this->assertTrue($result);
+        
+        // Refresh models to get latest database values
+        $campaign->refresh();
+        $campaignContact->refresh();
+        
+        // Assert the campaign was successfully completed
+        $this->assertEquals(
+            Campaign::STATUS_COMPLETED, 
+            $campaign->status
+        );
+        
+        // Assert the campaign contact was cancelled
+        $this->assertEquals(
+            'cancelled', // Use string directly instead of the constant
+            $campaignContact->status
+        );
     }
 }
