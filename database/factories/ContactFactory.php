@@ -30,8 +30,10 @@ class ContactFactory extends Factory
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
             'email' => $this->faker->unique()->safeEmail(),
-            'phone' => $this->faker->phoneNumber(),
+            'cell_phone' => $this->faker->phoneNumber(),
+            'office_phone' => $this->faker->phoneNumber(),
             'job_title' => $this->faker->jobTitle(),
+            'deal_status' => $this->faker->randomElement(['none', 'contacted', 'responded', 'in_progress', 'closed_won', 'closed_lost']),
         ];
     }
 }

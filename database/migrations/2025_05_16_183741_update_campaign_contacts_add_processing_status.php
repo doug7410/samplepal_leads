@@ -10,9 +10,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // For PostgreSQL, we need to modify the enum type
-        DB::statement('ALTER TABLE campaign_contacts DROP CONSTRAINT IF EXISTS campaign_contacts_status_check');
-        DB::statement("ALTER TABLE campaign_contacts ADD CONSTRAINT campaign_contacts_status_check CHECK (status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'sent'::character varying, 'delivered'::character varying, 'opened'::character varying, 'clicked'::character varying, 'responded'::character varying, 'bounced'::character varying, 'failed'::character varying]::text[]))");
+        // Skip PostgreSQL-specific statements for SQLite during tests
+        if (config('database.default') !== 'sqlite') {
+            // For PostgreSQL, we need to modify the enum type
+            DB::statement('ALTER TABLE campaign_contacts DROP CONSTRAINT IF EXISTS campaign_contacts_status_check');
+            DB::statement("ALTER TABLE campaign_contacts ADD CONSTRAINT campaign_contacts_status_check CHECK (status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'sent'::character varying, 'delivered'::character varying, 'opened'::character varying, 'clicked'::character varying, 'responded'::character varying, 'bounced'::character varying, 'failed'::character varying]::text[]))");
+        } else {
+            // For SQLite, do nothing as it doesn't support constraints in the same way
+            // The validation should happen at the application level
+        }
     }
 
     /**
@@ -20,8 +26,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Restore original constraint without 'processing' status
-        DB::statement('ALTER TABLE campaign_contacts DROP CONSTRAINT IF EXISTS campaign_contacts_status_check');
-        DB::statement("ALTER TABLE campaign_contacts ADD CONSTRAINT campaign_contacts_status_check CHECK (status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'delivered'::character varying, 'opened'::character varying, 'clicked'::character varying, 'responded'::character varying, 'bounced'::character varying, 'failed'::character varying]::text[]))");
+        // Skip PostgreSQL-specific statements for SQLite during tests
+        if (config('database.default') !== 'sqlite') {
+            // Restore original constraint without 'processing' status
+            DB::statement('ALTER TABLE campaign_contacts DROP CONSTRAINT IF EXISTS campaign_contacts_status_check');
+            DB::statement("ALTER TABLE campaign_contacts ADD CONSTRAINT campaign_contacts_status_check CHECK (status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'delivered'::character varying, 'opened'::character varying, 'clicked'::character varying, 'responded'::character varying, 'bounced'::character varying, 'failed'::character varying]::text[]))");
+        }
     }
 };
