@@ -12,6 +12,14 @@ class Campaign extends Model
 {
     use HasFactory;
     
+    // Status constants
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_SCHEDULED = 'scheduled';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';  
+    public const STATUS_PAUSED = 'paused';
+    public const STATUS_FAILED = 'failed';
+    
     /**
      * The attributes that are mass assignable.
      *

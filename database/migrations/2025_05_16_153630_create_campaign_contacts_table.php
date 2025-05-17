@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('campaign_id')->constrained()->onDelete('cascade');
             $table->foreignId('contact_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['pending', 'sent', 'delivered', 'opened', 'clicked', 'responded', 'bounced', 'failed'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'sent', 'delivered', 'opened', 'clicked', 'responded', 'bounced', 'failed'])->default('pending');
             $table->string('message_id')->nullable(); // For tracking
             $table->timestamp('sent_at')->nullable();
             $table->timestamp('delivered_at')->nullable();

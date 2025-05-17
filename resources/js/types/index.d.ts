@@ -74,7 +74,7 @@ export interface Campaign {
     from_email: string;
     from_name: string | null;
     reply_to: string | null;
-    status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'paused';
+    status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'paused' | 'failed';
     scheduled_at: string | null;
     completed_at: string | null;
     user_id: number;
@@ -89,7 +89,7 @@ export interface CampaignContact {
     id: number;
     campaign_id: number;
     contact_id: number;
-    status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'responded' | 'bounced' | 'failed';
+    status: 'pending' | 'processing' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'responded' | 'bounced' | 'failed';
     message_id: string | null;
     sent_at: string | null;
     delivered_at: string | null;

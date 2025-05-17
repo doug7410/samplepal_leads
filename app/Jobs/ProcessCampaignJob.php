@@ -40,14 +40,14 @@ class ProcessCampaignJob implements ShouldQueue
     public function handle(): void
     {
         // Check if the campaign should be processed
-        if ($this->campaign->status !== 'in_progress') {
+        if ($this->campaign->status !== Campaign::STATUS_IN_PROGRESS) {
             Log::info("Campaign #{$this->campaign->id} is not in progress. Skipping.");
             return;
         }
         
         // Get all pending campaign contacts
         $pendingContactsCount = $this->campaign->campaignContacts()
-            ->where('status', 'pending')
+            ->where('status', CampaignContact::STATUS_PENDING)
             ->count();
             
         if ($pendingContactsCount === 0) {
@@ -65,21 +65,21 @@ class ProcessCampaignJob implements ShouldQueue
             
             // Determine if all emails failed
             $totalCount = array_sum($statusCounts);
-            $failedCount = $statusCounts['failed'] ?? 0;
-            $sentCount = $statusCounts['sent'] ?? 0;
+            $failedCount = $statusCounts[CampaignContact::STATUS_FAILED] ?? 0;
+            $sentCount = $statusCounts[CampaignContact::STATUS_SENT] ?? 0;
             
             if ($totalCount > 0 && $failedCount === $totalCount) {
                 // All emails failed
                 Log::error("Campaign #{$this->campaign->id} failed: all {$totalCount} emails failed to send.");
-                $this->campaign->status = 'failed';
+                $this->campaign->status = Campaign::STATUS_FAILED;
             } else if ($sentCount > 0) {
                 // At least some emails were sent successfully
                 Log::info("Campaign #{$this->campaign->id} completed with {$sentCount} sent emails and {$failedCount} failed emails.");
-                $this->campaign->status = 'completed';
+                $this->campaign->status = Campaign::STATUS_COMPLETED;
             } else {
                 // No emails were sent successfully
                 Log::error("Campaign #{$this->campaign->id} failed: no emails were sent successfully.");
-                $this->campaign->status = 'failed';
+                $this->campaign->status = Campaign::STATUS_FAILED;
             }
             
             $this->campaign->completed_at = now();
@@ -89,7 +89,7 @@ class ProcessCampaignJob implements ShouldQueue
         
         // Process a batch of pending contacts
         $pendingContacts = $this->campaign->campaignContacts()
-            ->where('status', 'pending')
+            ->where('status', CampaignContact::STATUS_PENDING)
             ->take($this->batchSize)
             ->get();
             

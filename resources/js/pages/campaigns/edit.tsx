@@ -491,10 +491,68 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                 </Button>
                 
                 {filteredContacts.length === 0 && (
-                  <div className="text-amber-600 text-xs text-center">
+                  <div className="text-amber-600 text-xs text-center mb-4">
                     You need to select at least one recipient to update this campaign
                   </div>
                 )}
+                
+                <div className="border-t pt-4 flex justify-between">
+                  <Button
+                    type="submit"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (filteredContacts.length > 0) {
+                        setData('contact_ids', filteredContacts.map(c => c.id));
+                        
+                        // Submit the form
+                        put(route('campaigns.update', { campaign: campaign.id }), {
+                          data: {
+                            ...data,
+                            contact_ids: filteredContacts.map(c => c.id),
+                          },
+                          onSuccess: () => {
+                            // Redirect to the campaign show page
+                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                          },
+                        });
+                      }
+                    }}
+                    disabled={processing || filteredContacts.length === 0}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Save and View Campaign
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (filteredContacts.length > 0) {
+                        // First save the form
+                        setData('contact_ids', filteredContacts.map(c => c.id));
+                        
+                        put(route('campaigns.update', { campaign: campaign.id }), {
+                          data: {
+                            ...data,
+                            contact_ids: filteredContacts.map(c => c.id),
+                          },
+                          onSuccess: () => {
+                            // Then redirect to the campaign show page with a message
+                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                          },
+                        });
+                      }
+                    }}
+                    disabled={processing || filteredContacts.length === 0}
+                    variant="secondary"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Save and Schedule</span>
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>

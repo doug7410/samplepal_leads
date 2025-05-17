@@ -10,6 +10,17 @@ class CampaignContact extends Model
 {
     use HasFactory;
     
+    // Status constants
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_PROCESSING = 'processing';
+    public const STATUS_SENT = 'sent';
+    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_OPENED = 'opened';
+    public const STATUS_CLICKED = 'clicked';
+    public const STATUS_RESPONDED = 'responded';
+    public const STATUS_BOUNCED = 'bounced';
+    public const STATUS_FAILED = 'failed';
+    
     /**
      * The attributes that are mass assignable.
      *

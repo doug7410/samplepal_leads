@@ -10,6 +10,13 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
+            // Force Vite to use HTTPS for all asset URLs
+            transformOnServe: (code, devServer) => {
+                return code.replace(/http:\/\/localhost:\d+/g, () => {
+                    const { protocol, hostname } = new URL(devServer.resolvedUrls?.local[0] || '');
+                    return `${protocol}//${hostname}`;
+                });
+            },
         }),
         react(),
         tailwindcss(),
@@ -20,6 +27,16 @@ export default defineConfig({
     resolve: {
         alias: {
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+        },
+    },
+    server: {
+        cors: {
+            origin: '*',
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization']
+        },
+        hmr: {
+            host: 'samplepal_leads.test'
         },
     },
 });

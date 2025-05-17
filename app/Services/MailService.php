@@ -25,6 +25,12 @@ class MailService
     public function sendEmail(Campaign $campaign, Contact $contact, array $options = []): ?string
     {
         try {
+            // Make sure we have the proper contact id, since we're receiving objects that may be stale
+            if (!$contact->id) {
+                Log::error("Contact has no ID: " . json_encode($contact->toArray()));
+                throw new \Exception("Contact has no ID");
+            }
+            
             // Get the campaign contact record
             $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
                 ->where('contact_id', $contact->id)
@@ -32,18 +38,29 @@ class MailService
                 
             if (!$campaignContact) {
                 Log::error("Campaign contact record not found for campaign #{$campaign->id} and contact #{$contact->id}");
+                
+                // Log more details to help diagnose the issue
+                $existingCount = CampaignContact::where('campaign_id', $campaign->id)->count();
+                Log::error("Campaign has {$existingCount} contacts total");
+                
                 throw new \Exception("Campaign contact record not found");
             }
             
             // Check if campaign contact is already being processed or has been processed
-            if ($campaignContact->status !== 'pending') {
+            if ($campaignContact->status !== CampaignContact::STATUS_PENDING) {
                 Log::warning("Campaign contact #{$campaignContact->id} has status '{$campaignContact->status}', not processing again");
                 return null;
             }
             
             // Mark as processing to prevent duplicate processing
-            $campaignContact->status = 'processing';
+            $campaignContact->status = CampaignContact::STATUS_PROCESSING;
             $campaignContact->save();
+            
+            // Ensure the status was saved correctly
+            if ($campaignContact->fresh()->status !== CampaignContact::STATUS_PROCESSING) {
+                Log::error("Failed to update campaign contact #{$campaignContact->id} status to 'processing'. Current status: " . $campaignContact->fresh()->status);
+                throw new \Exception("Failed to update campaign contact status");
+            }
         } catch (\Exception $e) {
             Log::error("Failed to prepare campaign contact: " . $e->getMessage());
             return null;
@@ -65,33 +82,57 @@ class MailService
             $mailable = new CampaignMail($campaign, $contact, $htmlBody);
             
             // Add Resend-specific headers if needed
-            $mailable->withSymfonyMessage(function ($message) use ($campaign, $contact) {
-                try {
-                    // Add X-Campaign-ID and X-Contact-ID headers for tracking
-                    $message->getHeaders()->addTextHeader('X-Campaign-ID', (string) $campaign->id);
-                    $message->getHeaders()->addTextHeader('X-Contact-ID', (string) $contact->id);
-                    
-                    // Add message stream ID if configured
-                    if (Config::has('services.resend.message_stream_id')) {
-                        $message->getHeaders()->addTextHeader(
-                            'X-Message-Stream',
-                            Config::get('services.resend.message_stream_id')
-                        );
+            try {
+                $mailable->withSymfonyMessage(function ($message) use ($campaign, $contact) {
+                    try {
+                        // Add X-Campaign-ID and X-Contact-ID headers for tracking
+                        $message->getHeaders()->addTextHeader('X-Campaign-ID', (string) $campaign->id);
+                        $message->getHeaders()->addTextHeader('X-Contact-ID', (string) $contact->id);
+                        
+                        // Add message stream ID if configured
+                        if (Config::has('services.resend.message_stream_id')) {
+                            $message->getHeaders()->addTextHeader(
+                                'X-Message-Stream',
+                                Config::get('services.resend.message_stream_id')
+                            );
+                        }
+                        
+                        // Log the headers added - safely convert headers to array
+                        try {
+                            $headers = $message->getHeaders()->all();
+                            // Handle both array and iterator
+                            $headerNames = [];
+                            if (is_array($headers)) {
+                                $headerNames = array_keys($headers);
+                            } else {
+                                // Safely iterate through headers
+                                foreach ($headers as $name => $header) {
+                                    $headerNames[] = $name;
+                                }
+                            }
+                            
+                            Log::debug('Added headers to email', [
+                                'campaign_id' => $campaign->id,
+                                'contact_id' => $contact->id,
+                                'headers' => $headerNames,
+                            ]);
+                        } catch (\Exception $headerEx) {
+                            // Catch any issues with headers but don't interrupt
+                            Log::warning('Could not log email headers: ' . $headerEx->getMessage());
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error adding headers to email: ' . $e->getMessage());
                     }
-                    
-                    // Log the headers added
-                    Log::debug('Added headers to email', [
-                        'campaign_id' => $campaign->id,
-                        'contact_id' => $contact->id,
-                        'headers' => array_keys($message->getHeaders()->all()),
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Error adding headers to email: ' . $e->getMessage());
-                }
-            });
+                });
+            } catch (\Exception $e) {
+                Log::error('Error configuring email message: ' . $e->getMessage());
+                // Continue without header configuration rather than failing completely
+            }
             
             // Send the email using Laravel's Mail facade with Resend
             $messageId = Str::uuid()->toString(); // Fallback ID
+            
+            $emailSent = false;
             
             try {
                 Log::info("Attempting to send email to {$contact->email} using " . config('mail.default') . " mailer");
@@ -100,6 +141,9 @@ class MailService
                 Mail::mailer('failover')
                     ->to($contact->email)
                     ->send($mailable);
+                
+                // If we get here, the email was sent successfully
+                $emailSent = true;
                 
                 // Get the message ID from the last sent message if available
                 try {
@@ -126,7 +170,10 @@ class MailService
                         Mail::mailer('log')
                             ->to($contact->email)
                             ->send($mailable);
-                            
+                        
+                        // If we get here, the fallback email was sent successfully    
+                        $emailSent = true;
+                        
                         Log::info("Fallback email sent successfully to log");
                     } catch (\Exception $fallbackEx) {
                         Log::error("Fallback mailer also failed: " . $fallbackEx->getMessage());
@@ -137,19 +184,31 @@ class MailService
                 }
             }
             
-            // Save the message ID for tracking (make sure we're updating the same record we marked as processing)
-            $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
-                ->where('contact_id', $contact->id)
-                ->where('status', 'processing')
-                ->first();
-                
-            if ($campaignContact) {
-                $campaignContact->message_id = $messageId;
-                $campaignContact->status = 'sent';
-                $campaignContact->sent_at = now();
-                $campaignContact->save();
+            // If the email was sent, we should update the status regardless of any other errors
+            if ($emailSent) {
+                try {
+                    // Save the message ID for tracking (make sure we're updating the same record we marked as processing)
+                    $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
+                        ->where('contact_id', $contact->id)
+                        ->whereIn('status', [CampaignContact::STATUS_PENDING, CampaignContact::STATUS_PROCESSING])
+                        ->first();
+                        
+                    if ($campaignContact) {
+                        $campaignContact->message_id = $messageId;
+                        $campaignContact->status = CampaignContact::STATUS_SENT;
+                        $campaignContact->sent_at = now();
+                        $campaignContact->save();
+                        
+                        Log::info("Updated campaign contact #{$campaignContact->id} status to sent");
+                    } else {
+                        Log::warning("Campaign contact for campaign #{$campaign->id} and contact #{$contact->id} not found, could not update status");
+                    }
+                } catch (\Exception $e) {
+                    // Don't let status update errors cause the whole email sending to fail
+                    Log::error("Error updating campaign contact status after email was sent: " . $e->getMessage());
+                }
             } else {
-                Log::warning("Campaign contact for campaign #{$campaign->id} and contact #{$contact->id} is no longer in processing state, skipping status update");
+                Log::error("Email to {$contact->email} was not sent due to errors");
             }
             
             return $messageId;
@@ -160,11 +219,11 @@ class MailService
             // Find the campaign contact record that should be in processing state
             $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
                 ->where('contact_id', $contact->id)
-                ->whereIn('status', ['pending', 'processing']) // Handle both pending and processing
+                ->whereIn('status', [CampaignContact::STATUS_PENDING, CampaignContact::STATUS_PROCESSING]) // Handle both pending and processing
                 ->first();
                 
             if ($campaignContact) {
-                $campaignContact->status = 'failed';
+                $campaignContact->status = CampaignContact::STATUS_FAILED;
                 $campaignContact->failed_at = now();
                 $campaignContact->failure_reason = $e->getMessage();
                 $campaignContact->save();

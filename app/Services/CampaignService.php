@@ -200,6 +200,7 @@ class CampaignService
         // Initialize all possible statuses with zero count
         $allStatuses = [
             'pending' => 0,
+            'processing' => 0,
             'sent' => 0,
             'delivered' => 0,
             'opened' => 0,

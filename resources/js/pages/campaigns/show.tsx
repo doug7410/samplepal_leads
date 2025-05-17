@@ -22,6 +22,18 @@ import {
   PieChart,
   BarChart
 } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface CampaignStatistics {
   total: number;
@@ -51,17 +63,19 @@ interface CampaignShowProps {
 }
 
 // Status badge mapping for campaign status
-const statusBadge = {
+const statusBadge: Record<string, { label: string, color: string }> = {
   draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
   scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-800' },
   in_progress: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
   completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
   paused: { label: 'Paused', color: 'bg-red-100 text-red-800' },
+  failed: { label: 'Failed', color: 'bg-orange-100 text-orange-800' },
 };
 
 // Status colors for the contact statuses
 const contactStatusColors = {
   pending: { bg: 'bg-gray-100', text: 'text-gray-800' },
+  processing: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
   sent: { bg: 'bg-blue-100', text: 'text-blue-800' },
   delivered: { bg: 'bg-green-100', text: 'text-green-800' },
   opened: { bg: 'bg-purple-100', text: 'text-purple-800' },
@@ -72,6 +86,13 @@ const contactStatusColors = {
 };
 
 export default function CampaignShow({ campaign, statistics }: CampaignShowProps) {
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<string>(() => {
+    // Default to one hour from now
+    const date = new Date();
+    date.setHours(date.getHours() + 1);
+    return date.toISOString().slice(0, 16); // Format for datetime-local input
+  });
   const breadcrumbs: BreadcrumbItem[] = [
     {
       title: 'Dashboard',
@@ -106,8 +127,8 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
               </Link>
             </Button>
             <h1 className="text-2xl font-bold">{campaign.name}</h1>
-            <Badge className={statusBadge[campaign.status].color}>
-              {statusBadge[campaign.status].label}
+            <Badge className={statusBadge[campaign.status as keyof typeof statusBadge]?.color || 'bg-gray-100 text-gray-800'}>
+              {statusBadge[campaign.status as keyof typeof statusBadge]?.label || campaign.status}
             </Badge>
           </div>
           
@@ -125,49 +146,165 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                     <span>Edit</span>
                   </Link>
                 </Button>
+                <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-1"
+                      disabled={statistics.total === 0}
+                      title={statistics.total === 0 ? "Add contacts before scheduling" : ""}
+                    >
+                      <Calendar size={14} />
+                      <span>Schedule</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Schedule Campaign</DialogTitle>
+                      <DialogDescription>
+                        Choose when to send this campaign. The campaign will be sent automatically at the specified time.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="py-4">
+                      <Label htmlFor="scheduled-time">Schedule Date & Time</Label>
+                      <Input
+                        id="scheduled-time"
+                        type="datetime-local"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setScheduleDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          router.post(route('campaigns.schedule', { campaign: campaign.id }), {
+                            scheduled_at: new Date(scheduledDate).toISOString(),
+                          });
+                          setScheduleDialogOpen(false);
+                        }}
+                      >
+                        Schedule Campaign
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Button 
+                  size="sm" 
+                  onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
+                  className="flex items-center gap-1"
+                  disabled={statistics.total === 0}
+                  title={statistics.total === 0 ? "Add contacts before sending" : ""}
+                >
+                  <Send size={14} />
+                  <span>Send Now</span>
+                </Button>
+              </>
+            )}
+            
+            {campaign.status === 'scheduled' && (
+              <>
                 <Button 
                   size="sm" 
                   onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
                   className="flex items-center gap-1"
                 >
                   <Send size={14} />
-                  <span>Send</span>
+                  <span>Send Now</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to cancel the scheduled campaign and reset it to draft status?')) {
+                      router.post(route('campaigns.stop', { campaign: campaign.id }));
+                    }
+                  }}
+                  className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <XCircle size={14} />
+                  <span>Cancel Schedule</span>
                 </Button>
               </>
             )}
             
-            {campaign.status === 'scheduled' && (
-              <Button 
-                size="sm" 
-                onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
-                className="flex items-center gap-1"
-              >
-                <Send size={14} />
-                <span>Send Now</span>
-              </Button>
-            )}
-            
             {campaign.status === 'in_progress' && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => router.post(route('campaigns.pause', { campaign: campaign.id }))}
-                className="flex items-center gap-1"
-              >
-                <Pause size={14} />
-                <span>Pause</span>
-              </Button>
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => router.post(route('campaigns.pause', { campaign: campaign.id }))}
+                  className="flex items-center gap-1"
+                >
+                  <Pause size={14} />
+                  <span>Pause</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to stop this campaign and reset it to draft status? This will reset any failed emails so you can try again.')) {
+                      router.post(route('campaigns.stop', { campaign: campaign.id }));
+                    }
+                  }}
+                  className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <XCircle size={14} />
+                  <span>Stop & Reset</span>
+                </Button>
+              </>
             )}
             
             {campaign.status === 'paused' && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => router.post(route('campaigns.resume', { campaign: campaign.id }))}
+                  className="flex items-center gap-1"
+                >
+                  <Play size={14} />
+                  <span>Resume</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to stop this campaign and reset it to draft status? This will reset any failed emails so you can try again.')) {
+                      router.post(route('campaigns.stop', { campaign: campaign.id }));
+                    }
+                  }}
+                  className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <XCircle size={14} />
+                  <span>Stop & Reset</span>
+                </Button>
+              </>
+            )}
+            
+            {campaign.status === 'failed' && (
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => router.post(route('campaigns.resume', { campaign: campaign.id }))}
-                className="flex items-center gap-1"
+                onClick={() => {
+                  if (confirm('Are you sure you want to reset this campaign to draft status? This will allow you to fix any issues and try again.')) {
+                    router.post(route('campaigns.stop', { campaign: campaign.id }));
+                  }
+                }}
+                className="flex items-center gap-1 text-red-600 border-red-600 hover:bg-red-50"
               >
-                <Play size={14} />
-                <span>Resume</span>
+                <XCircle size={14} />
+                <span>Reset to Draft</span>
               </Button>
             )}
           </div>
@@ -291,7 +428,9 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                 {Object.entries(statistics.statuses).map(([status, count]) => (
                   <div key={status} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${contactStatusColors[status as keyof typeof contactStatusColors].bg}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${
+                        contactStatusColors[status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
+                      }`}></div>
                       <span className="capitalize">{status}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -350,7 +489,11 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                       {cc.contact.company?.company_name || '-'}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <Badge className={`${contactStatusColors[cc.status].bg} ${contactStatusColors[cc.status].text}`}>
+                      <Badge className={`${
+                        contactStatusColors[cc.status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
+                      } ${
+                        contactStatusColors[cc.status as keyof typeof contactStatusColors]?.text || 'text-gray-800'
+                      }`}>
                         {cc.status}
                       </Badge>
                     </td>

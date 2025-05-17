@@ -29,10 +29,29 @@ class EmailEventHandler
         $headers = $message->getHeaders();
         
         // Debug log to help diagnose issues
-        Log::debug('Processing message sent event', [
-            'headers' => array_keys($headers->all()),
-            'message_class' => get_class($message),
-        ]);
+        try {
+            // Convert headers to array safely since it might be a Generator
+            $headerCollection = $headers->all();
+            $headerKeys = [];
+            
+            if (is_array($headerCollection)) {
+                $headerKeys = array_keys($headerCollection);
+            } else {
+                // Handle Generator by converting to array first
+                $headerKeys = array_keys(iterator_to_array($headerCollection, true));
+            }
+                
+            Log::debug('Processing message sent event', [
+                'headers' => $headerKeys,
+                'message_class' => get_class($message),
+            ]);
+        } catch (\Exception $e) {
+            // If we can't extract headers for logging, just log what we can without the headers
+            Log::debug('Processing message sent event (headers extraction failed)', [
+                'error' => $e->getMessage(),
+                'message_class' => get_class($message),
+            ]);
+        }
         
         $campaignId = null;
         $contactId = null;
