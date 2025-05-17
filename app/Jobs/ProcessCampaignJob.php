@@ -39,8 +39,8 @@ class ProcessCampaignJob implements ShouldQueue
     public function handle(): void
     {
         // Check if the campaign should be processed
-        if ($this->campaign->status !== Campaign::STATUS_IN_PROGRESS) {
-            Log::info("Campaign #{$this->campaign->id} is not in progress. Skipping.");
+        if (! $this->campaign->canProcess()) {
+            Log::info("Campaign #{$this->campaign->id} is not in a processable state. Skipping.");
 
             return;
         }

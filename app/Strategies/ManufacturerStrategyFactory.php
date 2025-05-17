@@ -11,8 +11,12 @@ class ManufacturerStrategyFactory
 {
     /**
      * Create a new manufacturer strategy instance based on the manufacturer name
+     *
+     * @param string $manufacturerName The name of the manufacturer
+     * @return ManufacturerStrategy The appropriate strategy instance
+     * @throws InvalidArgumentException If the manufacturer is not supported
      */
-    public static function create(string $manufacturerName): ManufacturerStrategy
+    public function create(string $manufacturerName): ManufacturerStrategy
     {
         // Convert the manufacturer name to lowercase for case-insensitive comparison
         $manufacturerName = strtolower($manufacturerName);

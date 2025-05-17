@@ -2,39 +2,23 @@
 
 namespace App\Strategies\Manufacturers;
 
-use App\Strategies\ManufacturerStrategy;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class SignifyStrategy implements ManufacturerStrategy
+class SignifyStrategy extends BaseManufacturerStrategy
 {
-    /**
-     * Base URL for Signify API
-     */
-    protected string $baseUrl;
-
-    /**
-     * API request headers
-     */
-    protected array $headers;
-
     /**
      * List of major cities to search
      */
     protected array $cities;
 
     /**
-     * Field mapping for Signify data
-     */
-    protected array $fieldMapping;
-
-    /**
      * Constructor to initialize class properties
      */
     public function __construct()
     {
+        $this->manufacturerName = 'Signify';
         $this->baseUrl = config('manufacturers.api_config.signify.agents_url');
         $this->headers = config('manufacturers.api_config.signify.headers');
         $this->cities = config('manufacturers.major_cities');
@@ -42,11 +26,11 @@ class SignifyStrategy implements ManufacturerStrategy
     }
 
     /**
-     * Collect representatives from Signify's website
+     * Fetch data from Signify API for multiple cities
      *
-     * @return Collection Collection of representative data
+     * @return array Raw data from Signify API
      */
-    public function collectReps(): Collection
+    protected function fetchDataFromSource(): array
     {
         Log::info('Fetching Signify data from multiple cities');
 
@@ -56,8 +40,6 @@ class SignifyStrategy implements ManufacturerStrategy
         foreach ($this->cities as $cityData) {
             $city = $cityData['city'];
             $state = $cityData['state'];
-            dump($city);
-
             // Construct search display text
             $searchDisplayText = "{$city}, {$state}, USA";
 
@@ -71,31 +53,9 @@ class SignifyStrategy implements ManufacturerStrategy
                 $response->throw();
                 $data = $response->json();
 
-                // Write data to file for inspection
-                $outputPath = storage_path('app/signify_response.json');
-                File::put($outputPath, json_encode($data, JSON_PRETTY_PRINT));
-                Log::info("Response data saved to {$outputPath}");
-
                 // Extract the results
                 if (isset($data['ResultList']) && ! empty($data['ResultList'])) {
                     $cityResults = $data['ResultList'];
-
-                    // Filter to include only sales agents and exclude distributors
-                    $cityResults = array_filter($cityResults, function ($result) {
-                        if (! isset($result['CategoryHierarchy']) || ! is_array($result['CategoryHierarchy'])) {
-                            return false;
-                        }
-
-                        // Find dealer type in the hierarchy
-                        for ($i = 0; $i < count($result['CategoryHierarchy']) - 1; $i++) {
-                            if ($result['CategoryHierarchy'][$i] === 'Dealer Type') {
-                                // Only include if it's a sales agent
-                                return $result['CategoryHierarchy'][$i + 1] === 'Sales agent';
-                            }
-                        }
-
-                        return false;
-                    });
 
                     // Add only new records (not seen before)
                     foreach ($cityResults as $result) {
@@ -111,8 +71,10 @@ class SignifyStrategy implements ManufacturerStrategy
                     Log::info("No results found for {$city}, {$state}");
                 }
 
-                // Add a small delay to avoid overwhelming the API
-                usleep(1000000); // 1 second delay
+                // Add a tiny delay in production, but not in tests
+                if (!app()->environment('testing')) {
+                    usleep(100000); // 0.1 second delay
+                }
 
             } catch (\Exception $e) {
                 Log::error("Error fetching data for {$city}, {$state}: ".$e->getMessage());
@@ -123,13 +85,49 @@ class SignifyStrategy implements ManufacturerStrategy
             $totalFound = count($allResults);
             Log::info("Found a total of {$totalFound} unique Signify sales agents across all cities");
 
-            // Map the data to our standardized format
-            return $this->mapToStandardFormat($allResults);
+            return $allResults;
         } else {
             Log::warning('No Signify sales agents found in any city');
 
-            return collect([]);
+            return [];
         }
+    }
+
+    /**
+     * Filter the raw data to include only sales agents
+     *
+     * @param  array  $data  Raw data from source
+     * @return array Filtered data
+     */
+    protected function filterData(array $data): array
+    {
+        return array_filter($data, function ($result) {
+            if (! isset($result['CategoryHierarchy']) || ! is_array($result['CategoryHierarchy'])) {
+                return false;
+            }
+
+            // Find dealer type in the hierarchy
+            for ($i = 0; $i < count($result['CategoryHierarchy']) - 1; $i++) {
+                if ($result['CategoryHierarchy'][$i] === 'Dealer Type') {
+                    // Only include if it's a sales agent
+                    return $result['CategoryHierarchy'][$i + 1] === 'Sales agent';
+                }
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Save response for inspection
+     *
+     * @param  array  $data  Raw data from source
+     */
+    protected function saveResponseForInspection(array $data): void
+    {
+        $outputPath = storage_path('app/signify_response.json');
+        File::put($outputPath, json_encode($data, JSON_PRETTY_PRINT));
+        Log::info("Response data saved to {$outputPath}");
     }
 
     /**
@@ -197,40 +195,5 @@ class SignifyStrategy implements ManufacturerStrategy
         }
 
         return $url;
-    }
-
-    /**
-     * Map the Signify API data to our standardized format
-     *
-     * @param  array  $data  The raw data from the Signify API
-     * @return Collection The standardized data
-     */
-    protected function mapToStandardFormat(array $data): Collection
-    {
-        return collect($data)->map(function ($item) {
-            // Start with the manufacturer name
-            $mappedData = [
-                'manufacturer' => 'Signify',
-            ];
-
-            // Map fields based on the configuration
-            foreach ($this->fieldMapping as $sourceField => $targetField) {
-                if (isset($item[$sourceField])) {
-                    $mappedData[$targetField] = $item[$sourceField];
-                }
-            }
-
-            // Handle missing fields
-            if (! isset($mappedData['country'])) {
-                $mappedData['country'] = 'USA';
-            }
-
-            // Ensure we don't pass any ID field - let the database generate it
-            if (isset($mappedData['id'])) {
-                unset($mappedData['id']);
-            }
-
-            return $mappedData;
-        });
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\States\CampaignState;
+use App\States\CampaignStateFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -89,5 +91,107 @@ class Campaign extends Model
     public function campaignContacts(): HasMany
     {
         return $this->hasMany(CampaignContact::class);
+    }
+
+    /**
+     * Get the current state of the campaign
+     */
+    public function getState(): CampaignState
+    {
+        return CampaignStateFactory::createState($this);
+    }
+
+    /**
+     * Schedule the campaign for future sending
+     *
+     * @return bool Whether the operation was successful
+     */
+    public function schedule(array $data): bool
+    {
+        return $this->getState()->schedule($this, $data);
+    }
+
+    /**
+     * Send the campaign immediately
+     *
+     * @return bool Whether the operation was successful
+     */
+    public function send(): bool
+    {
+        return $this->getState()->send($this);
+    }
+
+    /**
+     * Pause the campaign
+     *
+     * @return bool Whether the operation was successful
+     */
+    public function pause(): bool
+    {
+        return $this->getState()->pause($this);
+    }
+
+    /**
+     * Resume the campaign
+     *
+     * @return bool Whether the operation was successful
+     */
+    public function resume(): bool
+    {
+        return $this->getState()->resume($this);
+    }
+
+    /**
+     * Stop/cancel the campaign
+     *
+     * @return bool Whether the operation was successful
+     */
+    public function stop(): bool
+    {
+        return $this->getState()->stop($this);
+    }
+
+    /**
+     * Add contacts to the campaign
+     *
+     * @return int Number of contacts added
+     */
+    public function addContacts(array $contactIds): int
+    {
+        return $this->getState()->addContacts($this, $contactIds);
+    }
+
+    /**
+     * Remove contacts from the campaign
+     *
+     * @return int Number of contacts removed
+     */
+    public function removeContacts(array $contactIds): int
+    {
+        return $this->getState()->removeContacts($this, $contactIds);
+    }
+
+    /**
+     * Check if the campaign can be processed by the job processor
+     */
+    public function canProcess(): bool
+    {
+        return $this->getState()->canProcess();
+    }
+
+    /**
+     * Check if the campaign can transition to the given state
+     */
+    public function canTransitionTo(string $state): bool
+    {
+        return $this->getState()->canTransitionTo($state);
+    }
+
+    /**
+     * Get allowed state transitions for the current state
+     */
+    public function getAllowedTransitions(): array
+    {
+        return $this->getState()->getAllowedTransitions();
     }
 }

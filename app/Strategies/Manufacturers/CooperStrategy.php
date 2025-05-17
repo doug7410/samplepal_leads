@@ -2,39 +2,23 @@
 
 namespace App\Strategies\Manufacturers;
 
-use App\Strategies\ManufacturerStrategy;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class CooperStrategy implements ManufacturerStrategy
+class CooperStrategy extends BaseManufacturerStrategy
 {
-    /**
-     * Base URL for Cooper API
-     */
-    protected string $baseUrl;
-
-    /**
-     * API request headers
-     */
-    protected array $headers;
-
     /**
      * List of major cities to search
      */
     protected array $cities;
 
     /**
-     * Field mapping for Cooper data
-     */
-    protected array $fieldMapping;
-
-    /**
      * Constructor to initialize class properties
      */
     public function __construct()
     {
+        $this->manufacturerName = 'Cooper';
         $this->baseUrl = config('manufacturers.api_config.cooper.agents_url');
         $this->headers = config('manufacturers.api_config.cooper.headers');
         $this->cities = config('manufacturers.major_cities');
@@ -42,11 +26,11 @@ class CooperStrategy implements ManufacturerStrategy
     }
 
     /**
-     * Collect representatives from Cooper's website
+     * Fetch data from Cooper API for multiple cities
      *
-     * @return Collection Collection of representative data
+     * @return array Raw data from Cooper API
      */
-    public function collectReps(): Collection
+    protected function fetchDataFromSource(): array
     {
         Log::info('Fetching Cooper data from multiple cities');
 
@@ -56,7 +40,6 @@ class CooperStrategy implements ManufacturerStrategy
         foreach ($this->cities as $cityData) {
             $city = $cityData['city'];
             $state = $cityData['state'];
-            dump($city);
 
             // Construct search display text
             $searchDisplayText = "{$city}, {$state}, USA";
@@ -71,31 +54,11 @@ class CooperStrategy implements ManufacturerStrategy
                 $response->throw();
                 $data = $response->json();
 
-                // Write data to file for inspection
-                $outputPath = storage_path('app/cooper_response.json');
-                File::put($outputPath, json_encode($data, JSON_PRETTY_PRINT));
-                Log::info("Response data saved to {$outputPath}");
-
                 // Extract the results
                 if (isset($data['ResultList']) && ! empty($data['ResultList'])) {
                     $cityResults = $data['ResultList'];
 
                     // Save the full response for inspection
-                    dump('Found '.count($cityResults).' total Cooper results before filtering');
-
-                    // Cooper uses a different category structure than Signify
-                    $cityResults = collect($cityResults)->filter(function ($result) {
-                        if (! isset($result['CategoryHierarchy']) || ! is_array($result['CategoryHierarchy'])) {
-                            return false;
-                        }
-
-                        // For Cooper, we want to include agents (checking for "Agent Type" category)
-                        if (count($result['CategoryHierarchy']) >= 1) {
-                            return $result['CategoryHierarchy'][0] === 'Agent Type';
-                        }
-
-                        return false;
-                    })->toArray();
 
                     // Add only new records (not seen before)
                     foreach ($cityResults as $result) {
@@ -104,10 +67,8 @@ class CooperStrategy implements ManufacturerStrategy
                             $seenIds[] = $result['Id'];
                         }
                     }
-                    dump('Found '.count($cityResults)." Cooper agents in {$city}, {$state} (".
-                        count(array_unique(array_column($cityResults, 'Id'))).' unique)');
                     Log::info('Found '.count($cityResults)." Cooper agents in {$city}, {$state} (".
-                             count(array_unique(array_column($cityResults, 'Id'))).' unique)');
+                            count(array_unique(array_column($cityResults, 'Id'))).' unique)');
 
                     // Check total count reported by API
                     if (isset($data['TotalResults']) && $data['TotalResults'] > 0) {
@@ -130,13 +91,46 @@ class CooperStrategy implements ManufacturerStrategy
             $totalFound = count($allResults);
             Log::info("Found a total of {$totalFound} unique Cooper agents across all cities");
 
-            // Map the data to our standardized format
-            return $this->mapToStandardFormat($allResults);
+            return $allResults;
         } else {
             Log::warning('No Cooper agents found in any city');
 
-            return collect([]);
+            return [];
         }
+    }
+
+    /**
+     * Filter the raw data to include only agents
+     *
+     * @param  array  $data  Raw data from source
+     * @return array Filtered data
+     */
+    protected function filterData(array $data): array
+    {
+        return collect($data)->filter(function ($result) {
+            if (! isset($result['CategoryHierarchy']) || ! is_array($result['CategoryHierarchy'])) {
+                return false;
+            }
+
+            // For Cooper, we want to include agents (checking for "Agent Type" category)
+            if (count($result['CategoryHierarchy']) >= 1) {
+                return $result['CategoryHierarchy'][0] === 'Agent Type';
+            }
+
+            return false;
+        })->toArray();
+    }
+
+    /**
+     * Save response for inspection
+     *
+     * @param  array  $data  Raw data from source
+     */
+    protected function saveResponseForInspection(array $data): void
+    {
+        $outputPath = storage_path('app/cooper_response.json');
+        File::put($outputPath, json_encode($data, JSON_PRETTY_PRINT));
+        Log::info("Response data saved to {$outputPath}");
     }
 
     /**
@@ -208,40 +202,5 @@ class CooperStrategy implements ManufacturerStrategy
         }
 
         return $url;
-    }
-
-    /**
-     * Map the Cooper API data to our standardized format
-     *
-     * @param  array  $data  The raw data from the Cooper API
-     * @return Collection The standardized data
-     */
-    protected function mapToStandardFormat(array $data): Collection
-    {
-        return collect($data)->map(function ($item) {
-            // Start with the manufacturer name
-            $mappedData = [
-                'manufacturer' => 'Cooper',
-            ];
-
-            // Map fields based on the configuration
-            foreach ($this->fieldMapping as $sourceField => $targetField) {
-                if (isset($item[$sourceField])) {
-                    $mappedData[$targetField] = $item[$sourceField];
-                }
-            }
-
-            // Handle missing fields
-            if (! isset($mappedData['country'])) {
-                $mappedData['country'] = 'USA';
-            }
-
-            // Ensure we don't pass any ID field - let the database generate it
-            if (isset($mappedData['id'])) {
-                unset($mappedData['id']);
-            }
-
-            return $mappedData;
-        });
     }
 }

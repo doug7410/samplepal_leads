@@ -72,4 +72,16 @@ class CampaignFactory extends Factory
             'completed_at' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);
     }
+    
+    /**
+     * Indicate that the campaign has failed.
+     */
+    public function failed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => Campaign::STATUS_FAILED,
+            'scheduled_at' => fake()->dateTimeBetween('-2 weeks', '-1 week'),
+            'completed_at' => fake()->dateTimeBetween('-1 week', 'now'),
+        ]);
+    }
 }

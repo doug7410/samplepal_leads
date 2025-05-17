@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessCampaignJob;
 use App\Models\Campaign;
-use App\Models\CampaignContact;
 use App\Models\Contact;
+use App\Services\CampaignCommandService;
 use App\Services\CampaignService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,12 +15,15 @@ class CampaignController extends Controller
 {
     protected CampaignService $campaignService;
 
+    protected CampaignCommandService $commandService;
+
     /**
      * Constructor
      */
-    public function __construct(CampaignService $campaignService)
+    public function __construct(CampaignService $campaignService, CampaignCommandService $commandService)
     {
         $this->campaignService = $campaignService;
+        $this->commandService = $commandService;
     }
 
     /**
@@ -203,7 +205,7 @@ class CampaignController extends Controller
             'contact_ids.*' => 'exists:contacts,id',
         ]);
 
-        $count = $this->campaignService->addContacts($campaign, $validated['contact_ids']);
+        $count = $this->commandService->addContacts($campaign, $validated['contact_ids']);
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts added to campaign.");
@@ -225,7 +227,7 @@ class CampaignController extends Controller
             'contact_ids.*' => 'exists:contacts,id',
         ]);
 
-        $count = $this->campaignService->removeContacts($campaign, $validated['contact_ids']);
+        $count = $this->commandService->removeContacts($campaign, $validated['contact_ids']);
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "{$count} contacts removed from campaign.");
@@ -252,13 +254,13 @@ class CampaignController extends Controller
             'scheduled_at' => 'required|date|after:now',
         ]);
 
-        $this->campaignService->updateCampaign($campaign, [
-            'status' => Campaign::STATUS_SCHEDULED,
+        $success = $this->commandService->schedule($campaign, [
             'scheduled_at' => $validated['scheduled_at'],
         ]);
 
         return redirect()->route('campaigns.show', $campaign)
-            ->with('success', 'Campaign scheduled successfully.');
+            ->with($success ? 'success' : 'error',
+                $success ? 'Campaign scheduled successfully.' : 'Failed to schedule campaign.');
     }
 
     /**
@@ -272,10 +274,11 @@ class CampaignController extends Controller
                 ->with('error', 'Only in-progress or scheduled campaigns can be paused.');
         }
 
-        $this->campaignService->updateStatus($campaign, Campaign::STATUS_PAUSED);
+        $success = $this->commandService->pause($campaign);
 
         return redirect()->route('campaigns.show', $campaign)
-            ->with('success', 'Campaign paused successfully.');
+            ->with($success ? 'success' : 'error',
+                $success ? 'Campaign paused successfully.' : 'Failed to pause campaign.');
     }
 
     /**
@@ -289,14 +292,11 @@ class CampaignController extends Controller
                 ->with('error', 'Only paused campaigns can be resumed.');
         }
 
-        $status = $campaign->scheduled_at && $campaign->scheduled_at->isFuture()
-            ? Campaign::STATUS_SCHEDULED
-            : Campaign::STATUS_IN_PROGRESS;
-
-        $this->campaignService->updateStatus($campaign, $status);
+        $success = $this->commandService->resume($campaign);
 
         return redirect()->route('campaigns.show', $campaign)
-            ->with('success', 'Campaign resumed successfully.');
+            ->with($success ? 'success' : 'error',
+                $success ? 'Campaign resumed successfully.' : 'Failed to resume campaign.');
     }
 
     /**
@@ -315,24 +315,11 @@ class CampaignController extends Controller
                 ->with('error', 'This campaign cannot be stopped.');
         }
 
-        // Update campaign contacts that are still pending, processing, or failed to be reset
-        $campaign->campaignContacts()
-            ->whereIn('status', [
-                CampaignContact::STATUS_PENDING,
-                CampaignContact::STATUS_PROCESSING,
-                CampaignContact::STATUS_FAILED,
-            ])
-            ->update([
-                'status' => CampaignContact::STATUS_PENDING,
-                'failed_at' => null,
-                'failure_reason' => null,
-            ]);
-
-        // Set the campaign back to draft status
-        $this->campaignService->updateStatus($campaign, Campaign::STATUS_DRAFT);
+        $success = $this->commandService->stop($campaign);
 
         return redirect()->route('campaigns.show', $campaign)
-            ->with('success', 'Campaign stopped and reset to draft successfully.');
+            ->with($success ? 'success' : 'error',
+                $success ? 'Campaign stopped and reset to draft successfully.' : 'Failed to stop campaign.');
     }
 
     /**
@@ -352,12 +339,10 @@ class CampaignController extends Controller
                 ->with('error', 'Cannot send campaign with no contacts.');
         }
 
-        $this->campaignService->updateStatus($campaign, Campaign::STATUS_IN_PROGRESS);
-
-        // Dispatch the campaign processing job
-        ProcessCampaignJob::dispatch($campaign);
+        $success = $this->commandService->send($campaign);
 
         return redirect()->route('campaigns.show', $campaign)
-            ->with('success', 'Campaign is being sent.');
+            ->with($success ? 'success' : 'error',
+                $success ? 'Campaign is being sent.' : 'Failed to send campaign.');
     }
 }

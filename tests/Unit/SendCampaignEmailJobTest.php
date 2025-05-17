@@ -6,13 +6,13 @@ use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\MailService;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    // Fresh database for each test
-    $this->artisan('migrate:fresh');
+    // RefreshDatabase trait handles this for us
 
     // Create test data
     $this->campaign = Campaign::factory()->create([

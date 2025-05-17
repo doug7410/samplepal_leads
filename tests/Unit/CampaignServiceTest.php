@@ -6,12 +6,12 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\User;
 use App\Services\CampaignService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->artisan('migrate:fresh');
     $this->campaignService = new CampaignService;
 });
 

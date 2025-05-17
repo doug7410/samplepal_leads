@@ -9,6 +9,16 @@ use InvalidArgumentException;
 
 class ManufacturersService
 {
+    protected $strategyFactory;
+    
+    /**
+     * Constructor with dependency injection
+     */
+    public function __construct(ManufacturerStrategyFactory $strategyFactory = null)
+    {
+        $this->strategyFactory = $strategyFactory ?? new ManufacturerStrategyFactory();
+    }
+    
     /**
      * Get representatives from a manufacturer
      *
@@ -17,7 +27,7 @@ class ManufacturersService
     public function getManufacturerReps(string $manufacturerName): Collection
     {
         try {
-            $strategy = ManufacturerStrategyFactory::create($manufacturerName);
+            $strategy = $this->strategyFactory->create($manufacturerName);
 
             return $strategy->collectReps();
         } catch (InvalidArgumentException $e) {

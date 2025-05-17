@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
-use App\Services\MailService;
+use App\Services\MailServiceInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,7 +33,7 @@ class SendCampaignEmailJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(MailService $mailService): void
+    public function handle(MailServiceInterface $mailService): void
     {
         // Get the campaign and contact
         $campaign = $this->campaignContact->campaign;

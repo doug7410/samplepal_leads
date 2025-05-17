@@ -2,14 +2,10 @@
 
 use App\Models\Company;
 use App\Models\Contact;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-uses(TestCase::class);
-
-beforeEach(function () {
-    // Set up a clean database state for each test
-    $this->artisan('migrate:fresh');
-});
+uses(TestCase::class, RefreshDatabase::class);
 
 it('can create a company with valid attributes', function () {
     $company = Company::factory()->make();

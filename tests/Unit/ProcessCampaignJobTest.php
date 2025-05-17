@@ -5,15 +5,14 @@ use App\Jobs\SendCampaignEmailJob;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-uses(TestCase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    // Fresh database for each test
-    $this->artisan('migrate:fresh');
 
     // Create a test campaign
     $this->campaign = Campaign::factory()->create([
@@ -136,54 +135,51 @@ it('marks campaign as completed when all contacts are processed and at least one
     Bus::assertNotDispatched(ProcessCampaignJob::class);
 });
 
-// Skipping this test because 'failed' status is not in the enum in the migration
-// In a real application, we would modify the migration to include 'failed' status
-// it('marks campaign as failed when all contacts failed', function () {
-//     // Add three contacts all with failed status
-//     $contacts = Contact::factory()->count(3)->create();
-//
-//     foreach ($contacts as $contact) {
-//         CampaignContact::create([
-//             'campaign_id' => $this->campaign->id,
-//             'contact_id' => $contact->id,
-//             'status' => CampaignContact::STATUS_FAILED,
-//             'failed_at' => now(),
-//             'failure_reason' => 'Test failure reason'
-//         ]);
-//     }
-//
-//     // Process the campaign
-//     $job = new ProcessCampaignJob($this->campaign);
-//     $job->handle();
-//
-//     // Refresh the campaign from DB
-//     $this->campaign->refresh();
-//
-//     // Assert the campaign is marked as failed
-//     expect($this->campaign->status)->toBe(Campaign::STATUS_FAILED)
-//         ->and($this->campaign->completed_at)->not->toBeNull();
-//
-//     // Verify no additional jobs were dispatched
-//     Bus::assertNotDispatched(SendCampaignEmailJob::class);
-//     Bus::assertNotDispatched(ProcessCampaignJob::class);
-// });
+it('marks campaign as failed when all contacts failed', function () {
+    // Add three contacts all with failed status
+    $contacts = Contact::factory()->count(3)->create();
 
-// Skipping this test due to SQLite enum constraint issue
-// it('does nothing when there are no campaign contacts', function () {
-//     // No contacts added
-//
-//     // Process the campaign
-//     $job = new ProcessCampaignJob($this->campaign);
-//     $job->handle();
-//
-//     // Refresh the campaign from DB
-//     $this->campaign->refresh();
-//
-//     // Campaign should still be in progress
-//     expect($this->campaign->status)->toBe(Campaign::STATUS_IN_PROGRESS)
-//         ->and($this->campaign->completed_at)->toBeNull();
-//
-//     // No jobs should be dispatched
-//     Bus::assertNotDispatched(SendCampaignEmailJob::class);
-//     Bus::assertNotDispatched(ProcessCampaignJob::class);
-// });
+    foreach ($contacts as $contact) {
+        CampaignContact::create([
+            'campaign_id' => $this->campaign->id,
+            'contact_id' => $contact->id,
+            'status' => CampaignContact::STATUS_FAILED,
+            'failed_at' => now(),
+            'failure_reason' => 'Test failure reason'
+        ]);
+    }
+
+    // Process the campaign
+    $job = new ProcessCampaignJob($this->campaign);
+    $job->handle();
+
+    // Refresh the campaign from DB
+    $this->campaign->refresh();
+
+    // Assert the campaign is marked as failed
+    expect($this->campaign->status)->toBe(Campaign::STATUS_FAILED)
+        ->and($this->campaign->completed_at)->not->toBeNull();
+
+    // Verify no additional jobs were dispatched
+    Bus::assertNotDispatched(SendCampaignEmailJob::class);
+    Bus::assertNotDispatched(ProcessCampaignJob::class);
+});
+
+it('marks campaign as failed when there are no campaign contacts', function () {
+    // No contacts added
+
+    // Process the campaign
+    $job = new ProcessCampaignJob($this->campaign);
+    $job->handle();
+
+    // Refresh the campaign from DB
+    $this->campaign->refresh();
+
+    // Campaign should be marked as failed with a completion time
+    expect($this->campaign->status)->toBe(Campaign::STATUS_FAILED)
+        ->and($this->campaign->completed_at)->not->toBeNull();
+
+    // No jobs should be dispatched
+    Bus::assertNotDispatched(SendCampaignEmailJob::class);
+    Bus::assertNotDispatched(ProcessCampaignJob::class);
+});
