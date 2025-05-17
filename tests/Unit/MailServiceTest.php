@@ -1,6 +1,5 @@
 <?php
 
-use App\Mail\CampaignMail;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
@@ -49,7 +48,7 @@ beforeEach(function () {
     Mail::fake();
 
     // Create the tracking strategy and mail service
-    $this->trackingStrategy = new DefaultTrackingStrategy();
+    $this->trackingStrategy = new DefaultTrackingStrategy;
     $this->mailService = new MailService($this->trackingStrategy);
 
     // Define the route for tracking pixel
@@ -140,8 +139,8 @@ it('generates and verifies tracking tokens', function () {
 
 it('sends an email and updates the campaign contact status', function () {
     // Use the mock mail service
-    $mockMailService = new MockMailService();
-    
+    $mockMailService = new MockMailService;
+
     // Send the email
     $messageId = $mockMailService->sendEmail($this->campaign, $this->contact);
 
@@ -159,8 +158,8 @@ it('skips sending if campaign contact is not pending', function () {
     $this->campaignContact->save();
 
     // Use the mock mail service
-    $mockMailService = new MockMailService();
-    
+    $mockMailService = new MockMailService;
+
     // Try to send again
     $result = $mockMailService->sendEmail($this->campaign, $this->contact);
 
@@ -171,7 +170,7 @@ it('skips sending if campaign contact is not pending', function () {
 it('adds tracking to email content', function () {
     $content = 'Check out our <a href="https://example.com">website</a>';
     $processedContent = $this->trackingStrategy->addTrackingToEmail($content, $this->campaign, $this->contact);
-    
+
     // Check that tracking pixel and wrapped links were added
     expect($processedContent)->toContain('<img src=');
     expect($processedContent)->toContain('track/open');

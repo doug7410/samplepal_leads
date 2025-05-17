@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Strategies;
 
-use App\Strategies\Manufacturers\AcuityStrategy;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -83,7 +82,8 @@ class AcuityStrategyTest extends BaseStrategyTest
     public function test_collect_reps_handles_api_error()
     {
         // Create a test strategy with a fetchDataFromSource method that throws an exception
-        $errorStrategy = new class extends TestAcuityStrategy {
+        $errorStrategy = new class extends TestAcuityStrategy
+        {
             protected function fetchDataFromSource(): array
             {
                 throw new \Exception('Test API error');

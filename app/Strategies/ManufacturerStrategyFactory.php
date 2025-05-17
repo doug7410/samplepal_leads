@@ -12,8 +12,9 @@ class ManufacturerStrategyFactory
     /**
      * Create a new manufacturer strategy instance based on the manufacturer name
      *
-     * @param string $manufacturerName The name of the manufacturer
+     * @param  string  $manufacturerName  The name of the manufacturer
      * @return ManufacturerStrategy The appropriate strategy instance
+     *
      * @throws InvalidArgumentException If the manufacturer is not supported
      */
     public function create(string $manufacturerName): ManufacturerStrategy

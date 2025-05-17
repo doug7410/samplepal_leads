@@ -10,6 +10,7 @@ use Mockery;
 abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
+
     /**
      * The Mockery context for this test.
      *
@@ -19,13 +20,11 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * Setup the test environment.
-     *
-     * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create a new Mockery container for each test
         $this->mockeryContainer = Mockery::getContainer();
         if (is_null($this->mockeryContainer)) {
@@ -36,12 +35,10 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * Clean up the testing environment before the next test.
-     * 
+     *
      * NOTE: This resolves Mockery issues with Laravel facades and final classes.
      * If you encounter "Cannot redeclare Mockery_X::shouldReceive()" errors,
      * ensure this cleanup method is properly configured.
-     *
-     * @return void
      */
     protected function tearDown(): void
     {
@@ -50,12 +47,12 @@ abstract class TestCase extends BaseTestCase
             $this->mockeryContainer->mockery_close();
             Mockery::resetContainer();
         }
-        
+
         // Ensure all facades are cleared
         Facade::clearResolvedInstances();
-        
+
         parent::tearDown();
-        
+
         // Added extra insurance - global clean
         Mockery::close();
     }

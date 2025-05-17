@@ -3,7 +3,6 @@
 namespace Tests\Unit\Jobs;
 
 use App\Models\Campaign;
-use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\MailServiceInterface;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +39,7 @@ class MockMailService implements MailServiceInterface
     {
         $this->throwException = true;
         $this->exceptionMessage = $message;
+
         return $this;
     }
 
@@ -49,6 +49,7 @@ class MockMailService implements MailServiceInterface
     public function shouldReturnNull(): self
     {
         $this->returnNull = true;
+
         return $this;
     }
 
@@ -58,15 +59,16 @@ class MockMailService implements MailServiceInterface
     public function withMessageId(string $messageId): self
     {
         $this->messageId = $messageId;
+
         return $this;
     }
 
     /**
      * Send an email
      *
-     * @param Campaign $campaign Campaign containing email content and subject
-     * @param Contact $contact Contact to send email to
-     * @param array $options Additional options for email sending
+     * @param  Campaign  $campaign  Campaign containing email content and subject
+     * @param  Contact  $contact  Contact to send email to
+     * @param  array  $options  Additional options for email sending
      * @return string|null Message ID on success, null on failure
      */
     public function sendEmail(Campaign $campaign, Contact $contact, array $options = []): ?string

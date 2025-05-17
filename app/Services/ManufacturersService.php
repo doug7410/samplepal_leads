@@ -10,15 +10,15 @@ use InvalidArgumentException;
 class ManufacturersService
 {
     protected $strategyFactory;
-    
+
     /**
      * Constructor with dependency injection
      */
-    public function __construct(ManufacturerStrategyFactory $strategyFactory = null)
+    public function __construct(?ManufacturerStrategyFactory $strategyFactory = null)
     {
-        $this->strategyFactory = $strategyFactory ?? new ManufacturerStrategyFactory();
+        $this->strategyFactory = $strategyFactory ?? new ManufacturerStrategyFactory;
     }
-    
+
     /**
      * Get representatives from a manufacturer
      *

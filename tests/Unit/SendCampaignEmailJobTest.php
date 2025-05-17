@@ -5,8 +5,8 @@ use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\MailService;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

@@ -198,14 +198,15 @@ class EmailTrackingController extends Controller
     {
         // For testing purposes, always return true
         return true;
-        
+
         try {
             // Make sure we have all required inputs
-            if (!$signatureHeader) {
+            if (! $signatureHeader) {
                 Log::error('Missing signature header');
+
                 return false;
             }
-            
+
             // Get the raw body content - we need the exact string that was signed
             $bodyContent = request()->getContent();
 

@@ -72,7 +72,7 @@ class SignifyStrategy extends BaseManufacturerStrategy
                 }
 
                 // Add a tiny delay in production, but not in tests
-                if (!app()->environment('testing')) {
+                if (! app()->environment('testing')) {
                     usleep(100000); // 0.1 second delay
                 }
 

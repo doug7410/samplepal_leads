@@ -11,26 +11,32 @@ use Illuminate\Support\Facades\Log;
 class MockMailService implements MailServiceInterface
 {
     protected bool $throwException = false;
+
     protected bool $returnNull = false;
+
     protected string $messageId = 'test-message-id-123';
+
     protected string $exceptionMessage = 'Test mail sending error';
 
     public function shouldThrowException(string $message = 'Test mail sending error'): self
     {
         $this->throwException = true;
         $this->exceptionMessage = $message;
+
         return $this;
     }
 
     public function shouldReturnNull(): self
     {
         $this->returnNull = true;
+
         return $this;
     }
 
     public function withMessageId(string $messageId): self
     {
         $this->messageId = $messageId;
+
         return $this;
     }
 
@@ -61,6 +67,7 @@ class MockMailService implements MailServiceInterface
         // Only proceed if status is pending
         if ($campaignContact->status !== 'pending') {
             Log::info("Campaign contact #{$campaignContact->id} is not pending, skipping");
+
             return null;
         }
 

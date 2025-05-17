@@ -18,14 +18,19 @@ use Tests\TestCase;
 class EmailCampaignWorkflowTest extends TestCase
 {
     use RefreshDatabase;
-    
+
     private CampaignService $campaignService;
+
     private User $user;
+
     private Company $company1;
+
     private Company $company2;
+
     private $contacts1;
+
     private $contacts2;
-    
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -68,7 +73,7 @@ class EmailCampaignWorkflowTest extends TestCase
         // Act as the user
         $this->actingAs($this->user);
     }
-    
+
     public function test_creates_a_campaign_adds_contacts_and_starts_the_campaign(): void
     {
         // 1. Create a campaign

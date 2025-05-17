@@ -145,7 +145,7 @@ it('marks campaign as failed when all contacts failed', function () {
             'contact_id' => $contact->id,
             'status' => CampaignContact::STATUS_FAILED,
             'failed_at' => now(),
-            'failure_reason' => 'Test failure reason'
+            'failure_reason' => 'Test failure reason',
         ]);
     }
 

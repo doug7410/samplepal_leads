@@ -27,11 +27,11 @@ class EmailEventHandler
         // Extract campaign_id and contact_id from the message's headers or metadata
         $message = $event->message;
         $headers = $message->getHeaders();
-        
+
         // Debug log to see what's going on
-        Log::debug("Message class type", [
+        Log::debug('Message class type', [
             'class' => get_class($message),
-            'has_originalMessage' => method_exists($message, 'getOriginalMessage')
+            'has_originalMessage' => method_exists($message, 'getOriginalMessage'),
         ]);
 
         // Debug log to help diagnose issues

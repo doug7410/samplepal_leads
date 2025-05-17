@@ -61,7 +61,7 @@ class EmailEventHandlerTest extends TestCase
         $this->campaignContact->status = 'sent';
         $this->campaignContact->sent_at = now();
         $this->campaignContact->save();
-        
+
         // Create a new email event record
         $emailEvent = new EmailEvent([
             'campaign_id' => $this->campaign->id,
@@ -71,30 +71,30 @@ class EmailEventHandlerTest extends TestCase
             'event_data' => [],
         ]);
         $emailEvent->save();
-        
+
         // Debugging output
         echo "\n-- Test State After Handler --\n";
-        echo "Campaign ID: " . $this->campaign->id . "\n";
-        echo "Contact ID: " . $this->contact->id . "\n";
-        
+        echo 'Campaign ID: '.$this->campaign->id."\n";
+        echo 'Contact ID: '.$this->contact->id."\n";
+
         // Query the database directly to see what's happening
         $campaignContact = DB::table('campaign_contacts')
             ->where('campaign_id', $this->campaign->id)
             ->where('contact_id', $this->contact->id)
             ->first();
-            
-        echo "DB Campaign Contact Status: " . ($campaignContact ? $campaignContact->status : 'Not Found') . "\n";
-        
+
+        echo 'DB Campaign Contact Status: '.($campaignContact ? $campaignContact->status : 'Not Found')."\n";
+
         $emailEvents = DB::table('email_events')
             ->where('campaign_id', $this->campaign->id)
             ->where('contact_id', $this->contact->id)
             ->get();
-            
-        echo "Email Events Count: " . $emailEvents->count() . "\n";
-        
+
+        echo 'Email Events Count: '.$emailEvents->count()."\n";
+
         // Refresh our model to get the latest data
         $this->campaignContact->refresh();
-        echo "Model Campaign Contact Status: " . $this->campaignContact->status . "\n";
+        echo 'Model Campaign Contact Status: '.$this->campaignContact->status."\n";
         echo "----------------------------\n";
 
         // Verify that the campaign contact was updated
@@ -115,7 +115,7 @@ class EmailEventHandlerTest extends TestCase
         $this->campaignContact->status = 'sent';
         $this->campaignContact->sent_at = now();
         $this->campaignContact->save();
-        
+
         // Create a new email event record
         $emailEvent = new EmailEvent([
             'campaign_id' => $this->campaign->id,
@@ -201,7 +201,7 @@ class EmailEventHandlerTest extends TestCase
         $this->campaignContact->status = 'sent';
         $this->campaignContact->sent_at = now()->subHour();
         $this->campaignContact->save();
-        
+
         // Create a new email event record
         $emailEvent = new EmailEvent([
             'campaign_id' => $this->campaign->id,
@@ -260,7 +260,7 @@ class EmailEventHandlerTest extends TestCase
     {
         // Create a mock of the SentMessage that directly responds to getHeaders and getMetadata
         $laravelSentMessage = Mockery::mock('Illuminate\Mail\SentMessage');
-        
+
         // Setup the headers mock
         $headers = Mockery::mock('stdClass');
         $headers->shouldReceive('all')->andReturn(['X-Campaign-ID' => 'value', 'X-Contact-ID' => 'value']);
@@ -308,7 +308,7 @@ class EmailEventHandlerTest extends TestCase
         // Ensure getMetadata is available and returns empty array
         $laravelSentMessage->shouldReceive('getMetadata')
             ->andReturn([]);
-            
+
         // Return the full SentMessage object
         return $laravelSentMessage;
     }
@@ -320,7 +320,7 @@ class EmailEventHandlerTest extends TestCase
     {
         // Create a mock of the SentMessage that directly responds to getHeaders and getMetadata
         $laravelSentMessage = Mockery::mock('Illuminate\Mail\SentMessage');
-        
+
         // Create empty headers as a flexible mock
         $headers = Mockery::mock('stdClass');
         $headers->shouldReceive('all')->andReturn([]);
@@ -343,7 +343,7 @@ class EmailEventHandlerTest extends TestCase
         // Add getMetadata to the SentMessage
         $laravelSentMessage->shouldReceive('getMetadata')
             ->andReturn($metadata);
-            
+
         // Return the full SentMessage object
         return $laravelSentMessage;
     }

@@ -3,9 +3,7 @@
 namespace Tests\Unit\Strategies;
 
 use App\Strategies\Manufacturers\SignifyStrategy;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Tests\Unit\Strategies\TestSignifyStrategy;
 
 class SignifyStrategyTest extends BaseStrategyTest
 {
@@ -103,7 +101,8 @@ class SignifyStrategyTest extends BaseStrategyTest
     public function test_collect_reps_handles_api_error()
     {
         // Create a test strategy with a fetchDataFromSource method that throws an exception
-        $errorStrategy = new class extends TestSignifyStrategy {
+        $errorStrategy = new class extends TestSignifyStrategy
+        {
             protected function fetchDataFromSource(): array
             {
                 throw new \Exception('Test API error');
@@ -233,17 +232,17 @@ class SignifyStrategyTest extends BaseStrategyTest
 
         // Test the filterData method directly
         $filteredData = $this->strategy->publicFilterData($testData);
-        
+
         // Verify that only sales agents are included
         expect($filteredData)->toBeArray()
             ->and($filteredData)->toHaveCount(2)
             ->and($filteredData[0]['Name'])->toBe('Signify Sales Agency')
             ->and($filteredData[1]['Name'])->toBe('Another Signify Agency');
-            
+
         // Now test through the collectReps method
         $this->strategy->setTestData($testData);
         $result = $this->strategy->collectReps();
-        
+
         // Verify that only sales agencies are included in the final collection
         expect($result)->toBeCollection()
             ->and($result)->toHaveCount(2)

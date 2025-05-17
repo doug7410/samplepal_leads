@@ -3,7 +3,6 @@
 namespace Tests\Unit\Strategies;
 
 use App\Strategies\Manufacturers\CooperStrategy;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CooperStrategyTest extends BaseStrategyTest
@@ -102,7 +101,8 @@ class CooperStrategyTest extends BaseStrategyTest
     public function test_collect_reps_handles_api_error()
     {
         // Create a test strategy with a fetchDataFromSource method that throws an exception
-        $errorStrategy = new class extends TestCooperStrategy {
+        $errorStrategy = new class extends TestCooperStrategy
+        {
             protected function fetchDataFromSource(): array
             {
                 throw new \Exception('Test API error');
@@ -232,7 +232,7 @@ class CooperStrategyTest extends BaseStrategyTest
             ->and($result[0])->not->toHaveKey('address_line_1')
             ->and($result[0])->not->toHaveKey('email');
     }
-    
+
     public function test_filter_data_only_includes_agents()
     {
         // Test data with different categories
@@ -270,17 +270,17 @@ class CooperStrategyTest extends BaseStrategyTest
 
         // Test the filterData method directly
         $filteredData = $this->strategy->publicFilterData($testData);
-        
+
         // Verify that only agents are included
         expect($filteredData)->toBeArray()
             ->and($filteredData)->toHaveCount(2)
             ->and($filteredData[0]['Name'])->toBe('Cooper Agent 1')
             ->and($filteredData[1]['Name'])->toBe('Cooper Agent 2');
-            
+
         // Now test through the collectReps method
         $this->strategy->setTestData($testData);
         $result = $this->strategy->collectReps();
-        
+
         // Verify that only agents are included in the final collection
         expect($result)->toBeCollection()
             ->and($result)->toHaveCount(2)

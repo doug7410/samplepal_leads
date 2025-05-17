@@ -72,7 +72,7 @@ class CampaignFactory extends Factory
             'completed_at' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);
     }
-    
+
     /**
      * Indicate that the campaign has failed.
      */

@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
-use Tests\Unit\Jobs\MockMailService;
 
 class CampaignFailureTest extends TestCase
 {
@@ -182,7 +181,7 @@ class CampaignFailureTest extends TestCase
         ]);
 
         // Use our concrete mock mail service to throw an exception
-        $mailService = new MockMailService();
+        $mailService = new MockMailService;
         $mailService->shouldThrowException('Test mail sending error');
 
         // Create and run the job
@@ -221,7 +220,7 @@ class CampaignFailureTest extends TestCase
         ]);
 
         // Use our concrete mock mail service to return null
-        $mailService = new MockMailService();
+        $mailService = new MockMailService;
         $mailService->shouldReturnNull();
 
         // Create and run the job
@@ -260,7 +259,7 @@ class CampaignFailureTest extends TestCase
         ]);
 
         // Use our concrete mock mail service to return a message ID
-        $mailService = new MockMailService();
+        $mailService = new MockMailService;
         $mailService->withMessageId('test-message-id-123');
 
         // Create and run the job
@@ -270,7 +269,7 @@ class CampaignFailureTest extends TestCase
         // Refresh the campaign contact
         $campaignContact->refresh();
 
-        // With our mock service, the status doesn't change because the MarkCampaignContactSent 
+        // With our mock service, the status doesn't change because the MarkCampaignContactSent
         // functionality is in AbstractMailService which our MockMailService doesn't inherit from.
         // In real code, MailService would update the status to 'sent', but our test mock doesn't do that.
         // The job doesn't directly update the status when message ID is returned.

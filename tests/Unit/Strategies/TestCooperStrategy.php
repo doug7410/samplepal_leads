@@ -30,7 +30,7 @@ class TestCooperStrategy extends CooperStrategy
         // Return the test data without making any HTTP calls
         return $this->testData;
     }
-    
+
     /**
      * Make the protected filterData method public for direct testing
      */

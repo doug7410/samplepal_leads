@@ -15,12 +15,13 @@ use Tests\TestCase;
 class ManufacturersServiceTest extends TestCase
 {
     use RefreshDatabase;
+
     private ManufacturersService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // We'll create the service with a mock factory in each test
     }
 
@@ -52,7 +53,7 @@ class ManufacturersServiceTest extends TestCase
             ->once()
             ->with('acuity')
             ->andReturn($mockStrategy);
-            
+
         // Create the service with our mock factory
         $this->service = new ManufacturersService($mockFactory);
 
@@ -74,7 +75,7 @@ class ManufacturersServiceTest extends TestCase
             ->once()
             ->with('invalid')
             ->andThrow(new InvalidArgumentException('Unsupported manufacturer: invalid'));
-            
+
         // Create the service with our mock factory
         $this->service = new ManufacturersService($mockFactory);
 
@@ -93,7 +94,7 @@ class ManufacturersServiceTest extends TestCase
             ->once()
             ->with('acuity')
             ->andThrow(new \Exception('API Connection Error'));
-            
+
         // Create the service with our mock factory
         $this->service = new ManufacturersService($mockFactory);
 
@@ -107,8 +108,8 @@ class ManufacturersServiceTest extends TestCase
     public function test_save_representatives_creates_new_companies()
     {
         // Create the service
-        $this->service = new ManufacturersService();
-        
+        $this->service = new ManufacturersService;
+
         // Prepare representative data
         $representatives = collect([
             [
@@ -148,8 +149,8 @@ class ManufacturersServiceTest extends TestCase
     public function test_save_representatives_updates_existing_companies()
     {
         // Create the service
-        $this->service = new ManufacturersService();
-        
+        $this->service = new ManufacturersService;
+
         // Create an existing company
         $existingCompany = Company::factory()->create([
             'company_name' => 'Existing Company',
@@ -187,8 +188,8 @@ class ManufacturersServiceTest extends TestCase
     public function test_save_representatives_removes_id_from_data()
     {
         // Create the service
-        $this->service = new ManufacturersService();
-        
+        $this->service = new ManufacturersService;
+
         // Prepare representative data with an ID field that should be removed
         $representatives = collect([
             [
@@ -217,8 +218,8 @@ class ManufacturersServiceTest extends TestCase
     public function test_save_representatives_maps_all_fields_correctly()
     {
         // Create the service
-        $this->service = new ManufacturersService();
-        
+        $this->service = new ManufacturersService;
+
         // Prepare representative data with all possible fields
         $representatives = collect([
             [

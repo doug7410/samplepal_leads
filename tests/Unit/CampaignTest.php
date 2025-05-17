@@ -138,7 +138,7 @@ it('can be created with different statuses using factory states', function () {
     $completedCampaign = Campaign::factory()->completed()->create();
     expect($completedCampaign->status)->toBe(Campaign::STATUS_COMPLETED)
         ->and($completedCampaign->completed_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
-        
+
     $failedCampaign = Campaign::factory()->failed()->create();
     expect($failedCampaign->status)->toBe(Campaign::STATUS_FAILED)
         ->and($failedCampaign->completed_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
