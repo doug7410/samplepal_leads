@@ -35,17 +35,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('campaigns/{campaign}/pause', [App\Http\Controllers\CampaignController::class, 'pause'])->name('campaigns.pause');
     Route::post('campaigns/{campaign}/resume', [App\Http\Controllers\CampaignController::class, 'resume'])->name('campaigns.resume');
     Route::post('campaigns/{campaign}/stop', [App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
+});
 
-    // Email tracking routes
+// Email tracking routes
+Route::withoutMiddleware(['web', 'auth'])->group(function () {
     Route::get('email/track/open/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackOpen'])->name('email.track.open');
     Route::get('email/track/click/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackClick'])->name('email.track.click');
     Route::post('email/track/responded/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'markAsResponded'])->name('email.track.responded');
+    Route::post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])->name('email.webhook');
 });
 
-// Webhook route outside auth middleware to allow external services to call it
-Route::post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])
-    ->withoutMiddleware(['web']) // Skip web middleware which has CSRF protection
-    ->name('email.webhook');
 
 // Unsubscribe route - should be accessible without authentication
 Route::get('email/unsubscribe/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'unsubscribe'])

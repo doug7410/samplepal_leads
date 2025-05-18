@@ -196,9 +196,6 @@ class EmailTrackingController extends Controller
      */
     protected function verifyResendSignature(array $payload, ?string $signatureHeader = null, string $secret = ''): bool
     {
-        // For testing purposes, always return true
-        return true;
-
         try {
             // Make sure we have all required inputs
             if (! $signatureHeader) {
@@ -358,7 +355,7 @@ class EmailTrackingController extends Controller
             return response('Error', 500);
         }
     }
-    
+
     /**
      * Process unsubscribe request.
      */
@@ -366,25 +363,25 @@ class EmailTrackingController extends Controller
     {
         // Verify the token
         $token = $request->query('token');
-        
+
         // Verify the unsubscribe token is valid
         if (!$token || !$this->verifyUnsubscribeToken($token, $campaign->id, $contact->id, $contact->email)) {
             return response('Invalid unsubscribe token', 403);
         }
-        
+
         try {
             // Record the unsubscribe event
             $this->recordEvent($campaign, $contact, 'unsubscribed', $request);
-            
+
             // Update all campaign contacts for this contact to prevent future emails
             CampaignContact::where('contact_id', $contact->id)
                 ->update(['status' => 'unsubscribed', 'unsubscribed_at' => now()]);
-            
+
             // Update contact's record to mark as unsubscribed
             $contact->has_unsubscribed = true;
             $contact->unsubscribed_at = now();
             $contact->save();
-            
+
             // Simple confirmation page
             return response()->view('unsubscribed', [
                 'contact' => $contact,
@@ -392,11 +389,11 @@ class EmailTrackingController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error processing unsubscribe request: ' . $e->getMessage());
-            
+
             return response('An error occurred while processing your unsubscribe request. Please try again later.', 500);
         }
     }
-    
+
     /**
      * Verify an unsubscribe token.
      */
@@ -405,7 +402,7 @@ class EmailTrackingController extends Controller
         $key = config('app.key');
         $data = $campaignId . '|' . $contactId . '|' . $email;
         $expectedToken = hash_hmac('sha256', $data, $key);
-        
+
         return hash_equals($expectedToken, $token);
     }
 }

@@ -83,7 +83,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'resend',
+                'smtp', // Changed to smtp for Mailtrap
                 'log',
             ],
         ],

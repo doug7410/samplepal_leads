@@ -22,5 +22,8 @@ class DatabaseSeeder extends Seeder
 
         // Run the Kiwi Tech Lab test seeder
         $this->call(KiwiTestSeeder::class);
+        
+        // Run the Company Campaign test seeder
+        $this->call(CampaignTestSeeder::class);
     }
 }
