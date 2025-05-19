@@ -24,7 +24,7 @@ class CampaignTestSeeder extends Seeder
         $campaign = Campaign::create([
             'name' => 'Q2 Product Launch - Kiwi Tech Lab',
             'description' => 'Campaign to introduce new lighting products to Kiwi Tech Lab',
-            'subject' => 'Hello {{recipients}} - New Lighting Solutions for Kiwi Tech Lab',
+            'subject' => 'New Lighting Solutions for Kiwi Tech Lab',
             'content' => '<p>Hello {{recipients}},</p>
 
 <p>I wanted to reach out to you all at Kiwi Tech Lab about our latest smart lighting solutions that would be perfect for your new office space.</p>
@@ -37,6 +37,8 @@ class CampaignTestSeeder extends Seeder
 </ul>
 
 <p>I\'d love to schedule a demo for your team. Would next Tuesday work for a quick call?</p>
+
+<p>Website: <a href="https://samplepal.net">Sample Pal</a></p>
 
 <p>Best regards,<br>
 Angela<br>
