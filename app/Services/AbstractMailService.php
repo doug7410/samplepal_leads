@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Decorators\EmailContent\EmailContentProcessorFactory;
 use App\Decorators\EmailContent\EmailContentProcessorInterface;
 use App\Helpers\RecipientsFormatter;
+use App\Jobs\SendCampaignEmailJob;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Company;
@@ -99,18 +100,35 @@ abstract class AbstractMailService implements MailServiceInterface
 
         Log::info("Sending campaign #{$campaign->id} to {$contacts->count()} contacts in company #{$company->id} ({$company->name})");
 
-        // Send email to each contact
+        // Find all existing campaign contacts or create them if they don't exist
         foreach ($contacts as $contact) {
             try {
-                $messageId = $this->sendEmail($campaign, $contact, $options);
-                $results[$contact->id] = $messageId;
+                // Get the campaign contact record
+                $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
+                    ->where('contact_id', $contact->id)
+                    ->first();
 
-                // Add a short delay between emails to avoid rate limiting
-                if (count($contacts) > 5) {
-                    usleep(200000); // 200ms delay
+                if (!$campaignContact) { //TODO: the mail service should not have to create contacts. 
+                    Log::info("Creating campaign contact record for campaign #{$campaign->id} and contact #{$contact->id}");
+                    $campaignContact = new CampaignContact([
+                        'campaign_id' => $campaign->id,
+                        'contact_id' => $contact->id,
+                        'status' => CampaignContact::STATUS_PENDING,
+                    ]);
+                    $campaignContact->save();
+                }
+
+                // Only dispatch job if the status is pending
+                if ($campaignContact->status === CampaignContact::STATUS_PENDING) {
+                    // Dispatch a job to send the email
+                    SendCampaignEmailJob::dispatch($campaignContact);
+                    $results[$contact->id] = 'queued';
+                } else {
+                    // If already processed, add to results with appropriate status
+                    $results[$contact->id] = $campaignContact->status;
                 }
             } catch (\Exception $e) {
-                Log::error("Failed to send email to contact #{$contact->id} ({$contact->email}): " . $e->getMessage());
+                Log::error("Failed to queue email for contact #{$contact->id} ({$contact->email}): " . $e->getMessage());
                 $results[$contact->id] = null;
             }
         }

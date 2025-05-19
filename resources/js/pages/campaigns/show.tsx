@@ -43,17 +43,13 @@ interface CampaignStatistics {
     pending: number;
     sent: number;
     delivered: number;
-    opened: number;
     clicked: number;
-    responded: number;
     bounced: number;
     failed: number;
   };
   rates: {
     delivery: number;
-    open: number;
     click: number;
-    response: number;
   };
 }
 
@@ -80,9 +76,7 @@ const contactStatusColors = {
   processing: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
   sent: { bg: 'bg-blue-100', text: 'text-blue-800' },
   delivered: { bg: 'bg-green-100', text: 'text-green-800' },
-  opened: { bg: 'bg-purple-100', text: 'text-purple-800' },
   clicked: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
-  responded: { bg: 'bg-teal-100', text: 'text-teal-800' },
   bounced: { bg: 'bg-red-100', text: 'text-red-800' },
   failed: { bg: 'bg-orange-100', text: 'text-orange-800' },
 };
@@ -441,22 +435,10 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                   <div className="text-lg font-semibold">{statistics.rates.delivery}%</div>
                 </div>
                 
-                {/* Open Rate */}
-                <div className="border rounded-md p-3 bg-white">
-                  <div className="text-gray-500 text-xs mb-1">Open Rate</div>
-                  <div className="text-lg font-semibold">{statistics.rates.open}%</div>
-                </div>
-                
                 {/* Click Rate */}
                 <div className="border rounded-md p-3 bg-white">
                   <div className="text-gray-500 text-xs mb-1">Click Rate</div>
                   <div className="text-lg font-semibold">{statistics.rates.click}%</div>
-                </div>
-                
-                {/* Response Rate */}
-                <div className="border rounded-md p-3 bg-white">
-                  <div className="text-gray-500 text-xs mb-1">Response Rate</div>
-                  <div className="text-lg font-semibold">{statistics.rates.response}%</div>
                 </div>
               </div>
             </div>
@@ -465,22 +447,24 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2">Status Breakdown</h3>
               <div className="space-y-2">
-                {Object.entries(statistics.statuses).map(([status, count]) => (
-                  <div key={status} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${
-                        contactStatusColors[status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
-                      }`}></div>
-                      <span className="capitalize">{status}</span>
+                {Object.entries(statistics.statuses)
+                  .filter(([status]) => status !== 'opened' && status !== 'responded')
+                  .map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${
+                          contactStatusColors[status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
+                        }`}></div>
+                        <span className="capitalize">{status}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{count}</span>
+                        <span className="text-gray-500 text-xs">
+                          ({statistics.total > 0 ? ((count / statistics.total) * 100).toFixed(1) : 0}%)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{count}</span>
-                      <span className="text-gray-500 text-xs">
-                        ({statistics.total > 0 ? ((count / statistics.total) * 100).toFixed(1) : 0}%)
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </Card>
@@ -499,9 +483,7 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                   <th className="px-4 py-3">Company</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Sent</th>
-                  <th className="px-4 py-3">Opened</th>
                   <th className="px-4 py-3">Clicked</th>
-                  <th className="px-4 py-3">Responded</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -541,20 +523,14 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                       {cc.sent_at ? new Date(cc.sent_at).toLocaleString() : '-'}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {cc.opened_at ? new Date(cc.opened_at).toLocaleString() : '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
                       {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {cc.responded_at ? new Date(cc.responded_at).toLocaleString() : '-'}
                     </td>
                   </tr>
                 ))}
                 
                 {campaign.campaign_contacts.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
+                    <td colSpan={6} className="px-4 py-6 text-center text-neutral-500">
                       No recipients added to this campaign yet
                     </td>
                   </tr>
