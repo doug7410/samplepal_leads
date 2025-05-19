@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\RecipientsFormatter;
+use App\Jobs\SendCompanyCampaignEmailJob;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Company;
@@ -312,5 +313,31 @@ class CampaignService
                 'response' => $responseRate,
             ],
         ];
+    }
+
+    /**
+     * Process company campaigns by dispatching jobs for each company
+     *
+     * @param Campaign $campaign The campaign to process
+     * @return bool Whether the operation was successful
+     */
+    public function processCompanyCampaign(Campaign $campaign): bool
+    {
+        if ($campaign->type !== Campaign::TYPE_COMPANY) {
+            return false;
+        }
+
+        $companies = $campaign->companies;
+
+        if ($companies->isEmpty()) {
+            return false;
+        }
+
+
+        foreach ($companies as $company) {
+            SendCompanyCampaignEmailJob::dispatch($campaign, $company);
+        }
+
+        return true;
     }
 }

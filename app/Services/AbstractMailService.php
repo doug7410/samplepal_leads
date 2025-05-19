@@ -7,17 +7,12 @@ use App\Decorators\EmailContent\EmailContentProcessorInterface;
 use App\Helpers\RecipientsFormatter;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
+use App\Models\Company;
 use App\Models\Contact;
-use App\Strategies\EmailTracking\TrackingStrategy;
 use Illuminate\Support\Facades\Log;
 
 abstract class AbstractMailService implements MailServiceInterface
 {
-    /**
-     * Email tracking strategy
-     */
-    protected TrackingStrategy $trackingStrategy;
-
     /**
      * Email content processor
      */
@@ -26,10 +21,9 @@ abstract class AbstractMailService implements MailServiceInterface
     /**
      * Constructor
      */
-    public function __construct(TrackingStrategy $trackingStrategy)
+    public function __construct()
     {
-        $this->trackingStrategy = $trackingStrategy;
-        $this->contentProcessor = EmailContentProcessorFactory::createFullProcessor($trackingStrategy);
+        $this->contentProcessor = EmailContentProcessorFactory::createBasicProcessor();
     }
 
     /**
@@ -82,11 +76,55 @@ abstract class AbstractMailService implements MailServiceInterface
     }
 
     /**
-     * Verify a tracking token.
+     * Email all contacts in a company
+     *
+     * @param Campaign $campaign Campaign containing email content and subject
+     * @param Company $company Company whose contacts should receive the email
+     * @param array $options Additional options for email sending
+     * @return array Array of contact IDs mapped to message IDs or null values
+     */
+    public function sendEmailToCompany(Campaign $campaign, Company $company, array $options = []): array
+    {
+        $results = [];
+
+        // Get all contacts for the company
+        $contacts = $company->contacts()
+            ->whereNotNull('email')
+            ->get();
+
+        if ($contacts->isEmpty()) {
+            Log::warning("No valid contacts found for company #{$company->id} ({$company->name})");
+            return $results;
+        }
+
+        Log::info("Sending campaign #{$campaign->id} to {$contacts->count()} contacts in company #{$company->id} ({$company->name})");
+
+        // Send email to each contact
+        foreach ($contacts as $contact) {
+            try {
+                $messageId = $this->sendEmail($campaign, $contact, $options);
+                $results[$contact->id] = $messageId;
+
+                // Add a short delay between emails to avoid rate limiting
+                if (count($contacts) > 5) {
+                    usleep(200000); // 200ms delay
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to send email to contact #{$contact->id} ({$contact->email}): " . $e->getMessage());
+                $results[$contact->id] = null;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Verify a tracking token. (No longer used)
      */
     public function verifyTrackingToken(string $token, int $campaignId, int $contactId): bool
     {
-        return $this->trackingStrategy->verifyTrackingToken($token, $campaignId, $contactId);
+        // No longer needed, but maintained for interface compatibility
+        return false;
     }
 
     /**

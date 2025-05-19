@@ -91,16 +91,18 @@ class CompanyCampaignTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        // Verify campaign contacts were created - they'll already be sent because it's a test environment
-        $this->assertDatabaseHas('campaign_contacts', [
+        // Verify the campaign status changed to in_progress
+        $campaign->refresh();
+        $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status);
+        
+        // Verify the company is associated with the campaign
+        $this->assertDatabaseHas('campaign_companies', [
             'campaign_id' => $campaign->id,
-            'contact_id' => $doug->id,
+            'company_id' => $company->id,
         ]);
-
-        $this->assertDatabaseHas('campaign_contacts', [
-            'campaign_id' => $campaign->id,
-            'contact_id' => $angela->id,
-        ]);
+        
+        // We no longer create campaign contacts for company campaigns in advance
+        // Instead we directly process the company contacts when sending
     }
 
     /** @test */
@@ -135,21 +137,24 @@ class CompanyCampaignTest extends TestCase
         // Refresh campaign from database
         $campaign->refresh();
 
-        // Assert campaign status is now completed or in_progress
-        $this->assertTrue(
-            in_array($campaign->status, [Campaign::STATUS_COMPLETED, Campaign::STATUS_IN_PROGRESS]),
-            "Campaign status should be either completed or in_progress, but got {$campaign->status}"
-        );
+        // Assert campaign status is now in_progress
+        $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status, 
+            "Campaign status should be in_progress, but got {$campaign->status}");
 
-        // Assert campaign contacts were created for all contacts in the company
-        $this->assertCount($contacts->count(), $campaign->campaignContacts);
-
-        // Ensure all contacts from the company are in the campaign
+        // We're no longer using campaign contacts for company campaigns, so we verify that:
+        
+        // 1. The campaign is in in_progress state
+        $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status);
+        
+        // 2. The company is associated with the campaign
+        $this->assertDatabaseHas('campaign_companies', [
+            'campaign_id' => $campaign->id,
+            'company_id' => $company->id,
+        ]);
+        
+        // 3. Each contact is part of the company
         foreach ($contacts as $contact) {
-            $this->assertDatabaseHas('campaign_contacts', [
-                'campaign_id' => $campaign->id,
-                'contact_id' => $contact->id,
-            ]);
+            $this->assertEquals($company->id, $contact->company_id);
         }
     }
 }

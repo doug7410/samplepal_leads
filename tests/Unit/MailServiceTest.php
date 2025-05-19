@@ -4,10 +4,8 @@ use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\MailService;
-use App\Strategies\EmailTracking\DefaultTrackingStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 use Tests\Unit\Services\MockMailService;
 
@@ -47,19 +45,8 @@ beforeEach(function () {
     // Fake mail facade
     Mail::fake();
 
-    // Create the tracking strategy and mail service
-    $this->trackingStrategy = new DefaultTrackingStrategy;
-    $this->mailService = new MailService($this->trackingStrategy);
-
-    // Define the route for tracking pixel
-    Route::get('email/track/open/{campaign}/{contact}', function () {
-        return 'tracking-pixel';
-    })->name('email.track.open');
-
-    // Define the route for tracking clicks
-    Route::get('email/track/click/{campaign}/{contact}', function () {
-        return 'tracking-click';
-    })->name('email.track.click');
+    // Initialize the mail service
+    $this->mailService = new MailService();
 });
 
 it('parses template variables correctly', function () {
@@ -79,55 +66,7 @@ it('parses template variables correctly', function () {
     expect($result)->toContain('as a Developer');
 });
 
-it('generates a tracking pixel for email opens', function () {
-    // Use the tracking strategy directly
-    $result = $this->trackingStrategy->getTrackingPixel($this->campaign->id, $this->contact->id);
-
-    expect($result)->toContain('<img src="');
-    expect($result)->toContain('width="1" height="1" style="display:none;"');
-    expect($result)->toContain('track/open');
-    expect($result)->toContain($this->campaign->id);
-    expect($result)->toContain($this->contact->id);
-});
-
-it('processes links for tracking', function () {
-    $html = '<p>Check out <a href="https://example.com">this link</a> and <a href="https://another.com">another link</a></p>';
-    $result = $this->trackingStrategy->processLinksForTracking($html, $this->campaign->id, $this->contact->id);
-
-    expect($result)->toContain('<a href=');
-    expect($result)->toContain('email/track/click');
-    expect($result)->not->toContain('href="https://example.com"');
-    expect($result)->not->toContain('href="https://another.com"');
-    expect($result)->toContain($this->campaign->id);
-    expect($result)->toContain($this->contact->id);
-});
-
-it('does not track mailto links', function () {
-    $html = '<p>Contact us at <a href="mailto:info@example.com">info@example.com</a></p>';
-    $result = $this->trackingStrategy->processLinksForTracking($html, $this->campaign->id, $this->contact->id);
-
-    expect($result)->toContain('href="mailto:info@example.com"');
-    expect($result)->not->toContain('track/click');
-});
-
-it('generates and verifies tracking tokens', function () {
-    $token = $this->trackingStrategy->generateTrackingToken(
-        $this->campaign->id,
-        $this->contact->id
-    );
-
-    expect($token)->toBeString();
-    expect(strlen($token))->toBeGreaterThan(32); // Should be a substantial hash
-
-    // Now test the verification method
-    $verified = $this->trackingStrategy->verifyTrackingToken(
-        $token,
-        $this->campaign->id,
-        $this->contact->id
-    );
-
-    expect($verified)->toBeTrue();
-
+it('verifies tracking tokens', function () {
     // Test with invalid token
     $verified = $this->mailService->verifyTrackingToken(
         'invalid-token',
@@ -168,13 +107,3 @@ it('skips sending if campaign contact is not pending', function () {
     expect($result)->toBeNull();
 });
 
-it('adds tracking to email content', function () {
-    $content = 'Check out our <a href="https://example.com">website</a>';
-    $processedContent = $this->trackingStrategy->addTrackingToEmail($content, $this->campaign, $this->contact);
-
-    // Check that tracking pixel and wrapped links were added
-    expect($processedContent)->toContain('<img src=');
-    expect($processedContent)->toContain('track/open');
-    expect($processedContent)->toContain('track/click');
-    expect($processedContent)->not->toContain('href="https://example.com"');
-});

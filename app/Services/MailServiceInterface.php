@@ -18,6 +18,16 @@ interface MailServiceInterface
     public function sendEmail(Campaign $campaign, Contact $contact, array $options = []): ?string;
 
     /**
+     * Send an email to all contacts in a company
+     * 
+     * @param  Campaign  $campaign  Campaign containing email content and subject
+     * @param  \App\Models\Company  $company  Company whose contacts should receive the email
+     * @param  array  $options  Additional options for email sending
+     * @return array Array of contact IDs mapped to message IDs or null values
+     */
+    public function sendEmailToCompany(Campaign $campaign, \App\Models\Company $company, array $options = []): array;
+
+    /**
      * Verify a tracking token
      *
      * @param  string  $token  Token to verify

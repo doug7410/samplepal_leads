@@ -29,17 +29,15 @@ class SendCampaignCommand extends CampaignCommand
      */
     public function execute(): bool
     {
-        // For company campaigns, prepare contacts from the associated companies
-        if ($this->campaign->type === Campaign::TYPE_COMPANY) {
-            $this->campaignService->prepareCompanyContactsForProcessing($this->campaign);
-        }
-
         // Use the state pattern to update the status
         $result = $this->campaign->send();
 
         if ($result) {
-            // Dispatch the campaign processing job
-            ProcessCampaignJob::dispatch($this->campaign);
+            if ($this->campaign->type === Campaign::TYPE_COMPANY) {
+                $this->campaignService->processCompanyCampaign($this->campaign);
+            } else {
+                ProcessCampaignJob::dispatch($this->campaign);
+            }
         }
 
         return $result;

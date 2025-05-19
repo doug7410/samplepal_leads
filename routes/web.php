@@ -37,13 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('campaigns/{campaign}/stop', [App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
 });
 
-// Email tracking routes
-Route::withoutMiddleware(['auth'])->group(function () {
-    Route::get('email/track/open/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackOpen'])->name('email.track.open');
-    Route::get('email/track/click/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackClick'])->name('email.track.click');
-});
-
-
+// Email webhook for handling provider events (e.g. Resend.com)
 Route::withoutMiddleware(['auth', 'web'])
     ->post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])
     ->name('email.webhook');

@@ -57,27 +57,40 @@ class DraftCampaignState extends AbstractCampaignState
     public function send(Campaign $campaign): bool
     {
         try {
-            // Check if there are any contacts before starting
-            $contactCount = $campaign->campaignContacts()->count();
-            if ($contactCount === 0) {
-                Log::error('Cannot send campaign with no contacts');
-
-                return false;
+            // For company campaigns, check if there are companies
+            if ($campaign->type === Campaign::TYPE_COMPANY) {
+                $companyCount = $campaign->companies()->count();
+                if ($companyCount === 0) {
+                    Log::error('Cannot send company campaign with no companies');
+                    return false;
+                }
+                
+                // Update status to in progress
+                $campaign->status = Campaign::STATUS_IN_PROGRESS;
+                $campaign->save();
+                
+                Log::info("Company campaign #{$campaign->id} started with {$companyCount} companies");
+                
+                return true;
+            } 
+            // For contact campaigns, check if there are contacts
+            else {
+                $contactCount = $campaign->campaignContacts()->count();
+                if ($contactCount === 0) {
+                    Log::error('Cannot send contact campaign with no contacts');
+                    return false;
+                }
+                
+                // Update status to in progress
+                $campaign->status = Campaign::STATUS_IN_PROGRESS;
+                $campaign->save();
+                
+                Log::info("Contact campaign #{$campaign->id} started with {$contactCount} contacts");
+                
+                return true;
             }
-
-            // Update status to in progress
-            $campaign->status = Campaign::STATUS_IN_PROGRESS;
-            $campaign->save();
-
-            // Dispatch the job to process the campaign
-            ProcessCampaignJob::dispatch($campaign);
-
-            Log::info("Campaign #{$campaign->id} started with {$contactCount} contacts");
-
-            return true;
         } catch (\Exception $e) {
             Log::error('Error sending campaign: '.$e->getMessage());
-
             return false;
         }
     }

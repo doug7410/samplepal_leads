@@ -25,60 +25,6 @@ class EmailTrackingController extends Controller
     }
 
     /**
-     * Track email opens.
-     */
-    public function trackOpen(Request $request, Campaign $campaign, Contact $contact): Response
-    {
-        $token = $request->query('token');
-
-        // Validate the token
-        if (! $this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
-            return response('Invalid token', 403);
-        }
-
-        // Record the open event
-        $this->recordEvent($campaign, $contact, 'opened', $request);
-
-        // Return a transparent 1x1 pixel
-        return response(base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), 200)
-            ->header('Content-Type', 'image/gif')
-            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
-    }
-
-    /**
-     * Track email link clicks.
-     */
-    public function trackClick(Request $request, Campaign $campaign, Contact $contact)
-    {
-        $token = $request->query('token');
-        $encodedUrl = $request->query('url');
-
-        // Validate the token
-        if (! $this->mailService->verifyTrackingToken($token, $campaign->id, $contact->id)) {
-            return response('Invalid token', 403);
-        }
-
-        try {
-            // Decode the original URL
-            $url = base64_decode($encodedUrl);
-
-            // Record the click event
-            $this->recordEvent($campaign, $contact, 'clicked', $request, [
-                'url' => $url,
-            ]);
-
-            // Redirect to the original URL
-            return redirect($url);
-        } catch (\Exception $e) {
-            Log::error('Error tracking click: '.$e->getMessage());
-
-            return response('Error processing link', 500);
-        }
-    }
-
-    /**
      * Handle Resend webhook notification.
      */
     public function handleWebhook(Request $request): Response
