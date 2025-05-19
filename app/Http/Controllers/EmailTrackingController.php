@@ -321,39 +321,6 @@ class EmailTrackingController extends Controller
         }
     }
 
-    /**
-     * Mark contact as responded.
-     */
-    public function markAsResponded(Campaign $campaign, Contact $contact): Response
-    {
-        try {
-            // Record the response event
-            $this->recordEvent($campaign, $contact, 'responded', request());
-
-            // Update campaign contact
-            $campaignContact = CampaignContact::where('campaign_id', $campaign->id)
-                ->where('contact_id', $contact->id)
-                ->first();
-
-            if ($campaignContact) {
-                $campaignContact->status = 'responded';
-                $campaignContact->responded_at = now();
-                $campaignContact->save();
-            }
-
-            // Update contact deal status
-            if (in_array($contact->deal_status, ['none', 'contacted'])) {
-                $contact->deal_status = 'responded';
-                $contact->save();
-            }
-
-            return response('Success', 200);
-        } catch (\Exception $e) {
-            Log::error('Error marking contact as responded: '.$e->getMessage());
-
-            return response('Error', 500);
-        }
-    }
 
     /**
      * Process unsubscribe request.

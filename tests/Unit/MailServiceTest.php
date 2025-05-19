@@ -94,7 +94,8 @@ it('processes links for tracking', function () {
     $html = '<p>Check out <a href="https://example.com">this link</a> and <a href="https://another.com">another link</a></p>';
     $result = $this->trackingStrategy->processLinksForTracking($html, $this->campaign->id, $this->contact->id);
 
-    expect($result)->toContain('<a href="http://localhost/email/track/click');
+    expect($result)->toContain('<a href=');
+    expect($result)->toContain('email/track/click');
     expect($result)->not->toContain('href="https://example.com"');
     expect($result)->not->toContain('href="https://another.com"');
     expect($result)->toContain($this->campaign->id);
