@@ -16,10 +16,10 @@ class CampaignTestSeeder extends Seeder
     {
         // Get the first user in the system to assign as campaign owner
         $user = User::firstOrFail();
-        
+
         // Find the Kiwi Tech Lab company
         $company = Company::where('company_name', 'Kiwi Tech Lab')->firstOrFail();
-        
+
         // Create a company campaign
         $campaign = Campaign::create([
             'name' => 'Q2 Product Launch - Kiwi Tech Lab',
@@ -48,10 +48,10 @@ Sample Pal Lighting Solutions</p>',
             'type' => Campaign::TYPE_COMPANY,
             'user_id' => $user->id,
         ]);
-        
+
         // Attach the Kiwi Tech Lab company to the campaign
         $campaign->companies()->attach($company->id);
-        
+
         // Output confirmation
         $this->command->info('Created company campaign with Kiwi Tech Lab');
     }

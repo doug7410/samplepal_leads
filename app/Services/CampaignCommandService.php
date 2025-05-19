@@ -112,7 +112,7 @@ class CampaignCommandService
 
         return $this->invoker->execute($command);
     }
-    
+
     /**
      * Add companies to a campaign
      *
@@ -121,10 +121,10 @@ class CampaignCommandService
     public function addCompanies(Campaign $campaign, array $companyIds): int
     {
         $command = new AddCompaniesCommand($campaign, $companyIds);
-        
+
         return $this->invoker->execute($command);
     }
-    
+
     /**
      * Remove companies from a campaign
      *
@@ -133,7 +133,7 @@ class CampaignCommandService
     public function removeCompanies(Campaign $campaign, array $companyIds): int
     {
         $command = new RemoveCompaniesCommand($campaign, $companyIds);
-        
+
         return $this->invoker->execute($command);
     }
 }

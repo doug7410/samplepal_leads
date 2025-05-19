@@ -12,7 +12,7 @@ class RecipientsFormatterTest extends TestCase
     public function it_formats_a_single_recipient()
     {
         $contacts = [
-            $this->createContact('Doug', 'Steinberg')
+            $this->createContact('Doug', 'Steinberg'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -25,7 +25,7 @@ class RecipientsFormatterTest extends TestCase
     {
         $contacts = [
             $this->createContact('Doug', 'Steinberg'),
-            $this->createContact('Angela', 'Todd')
+            $this->createContact('Angela', 'Todd'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -39,7 +39,7 @@ class RecipientsFormatterTest extends TestCase
         $contacts = [
             $this->createContact('Doug', 'Steinberg'),
             $this->createContact('Angela', 'Todd'),
-            $this->createContact('John', 'Smith')
+            $this->createContact('John', 'Smith'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -54,7 +54,7 @@ class RecipientsFormatterTest extends TestCase
             $this->createContact('Doug', 'Steinberg'),
             $this->createContact('Angela', 'Todd'),
             $this->createContact('John', 'Smith'),
-            $this->createContact('Sara', 'Johnson')
+            $this->createContact('Sara', 'Johnson'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -68,7 +68,7 @@ class RecipientsFormatterTest extends TestCase
         $contacts = [
             $this->createContact('Doug', 'Steinberg'),
             $this->createContact('Doug', 'Todd'),
-            $this->createContact('Angela', 'Smith')
+            $this->createContact('Angela', 'Smith'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -83,7 +83,7 @@ class RecipientsFormatterTest extends TestCase
             $this->createContact('Doug', 'Steinberg'),
             $this->createContact('Doug', 'Todd'),
             $this->createContact('Doug', 'Johnson'),
-            $this->createContact('Angela', 'Smith')
+            $this->createContact('Angela', 'Smith'),
         ];
 
         $result = RecipientsFormatter::format($contacts);
@@ -119,9 +119,9 @@ class RecipientsFormatterTest extends TestCase
         $contact = $this->createStub(Contact::class);
         $contact->method('__get')->willReturnMap([
             ['first_name', $firstName],
-            ['last_name', $lastName]
+            ['last_name', $lastName],
         ]);
-        
+
         return $contact;
     }
 }

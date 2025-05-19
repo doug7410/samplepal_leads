@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('contacts', function (Blueprint $table) {
             // Add user_id column if it doesn't exist
-            if (!Schema::hasColumn('contacts', 'user_id')) {
+            if (! Schema::hasColumn('contacts', 'user_id')) {
                 $table->foreignId('user_id')->nullable()->after('deal_status')->constrained();
             }
         });

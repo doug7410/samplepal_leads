@@ -29,6 +29,7 @@ class Campaign extends Model
 
     // Campaign type constants
     public const TYPE_CONTACT = 'contact';
+
     public const TYPE_COMPANY = 'company';
 
     /**
@@ -51,10 +52,10 @@ class Campaign extends Model
         'filter_criteria',
         'type',
     ];
-    
+
     /**
      * The attributes that should be set to a default value when not present.
-     * 
+     *
      * @var array<string, mixed>
      */
     protected $attributes = [
@@ -106,7 +107,7 @@ class Campaign extends Model
     {
         return $this->hasMany(CampaignContact::class);
     }
-    
+
     /**
      * Get the companies associated with this campaign.
      */

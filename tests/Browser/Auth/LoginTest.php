@@ -34,11 +34,11 @@ class LoginTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($user) {
             $browser->visit('/login')
                 ->assertPathIs('/login');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }

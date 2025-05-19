@@ -11,12 +11,12 @@ class RemoveCompaniesCommand extends CampaignCommand
      * Company IDs to remove
      */
     protected array $companyIds;
-    
+
     /**
      * Campaign service
      */
     protected CampaignService $campaignService;
-    
+
     /**
      * Create a new RemoveCompaniesCommand instance
      */
@@ -26,7 +26,7 @@ class RemoveCompaniesCommand extends CampaignCommand
         $this->companyIds = $companyIds;
         $this->campaignService = app(CampaignService::class);
     }
-    
+
     /**
      * Execute the command to remove companies from the campaign
      *

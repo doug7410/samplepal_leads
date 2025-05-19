@@ -42,9 +42,7 @@ class AppearancePage extends Page
     /**
      * Select a theme.
      *
-     * @param Browser $browser
-     * @param string $theme (light, dark, system)
-     * @return Browser
+     * @param  string  $theme  (light, dark, system)
      */
     public function selectTheme(Browser $browser, string $theme): Browser
     {
@@ -52,9 +50,9 @@ class AppearancePage extends Page
             'light' => '@light-theme',
             'dark' => '@dark-theme',
             'system' => '@system-theme',
-            default => throw new \InvalidArgumentException("Theme must be one of: light, dark, system")
+            default => throw new \InvalidArgumentException('Theme must be one of: light, dark, system')
         };
-        
+
         return $browser->click($selector);
     }
 }

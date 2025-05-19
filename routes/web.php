@@ -38,13 +38,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Email tracking routes
-Route::withoutMiddleware(['web', 'auth'])->group(function () {
+Route::withoutMiddleware(['auth'])->group(function () {
     Route::get('email/track/open/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackOpen'])->name('email.track.open');
     Route::get('email/track/click/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'trackClick'])->name('email.track.click');
     Route::post('email/track/responded/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'markAsResponded'])->name('email.track.responded');
     Route::post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])->name('email.webhook');
 });
-
 
 // Unsubscribe route - should be accessible without authentication
 Route::get('email/unsubscribe/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'unsubscribe'])

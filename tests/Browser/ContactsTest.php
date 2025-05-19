@@ -47,10 +47,10 @@ class ContactsTest extends DuskTestCase
     {
         $user = User::factory()->create();
         $company = Company::factory()->create([
-            'manufacturer' => 'Test Manufacturer'
+            'manufacturer' => 'Test Manufacturer',
         ]);
         $contacts = Contact::factory()->count(3)->create([
-            'company_id' => $company->id
+            'company_id' => $company->id,
         ]);
 
         $this->browse(function (Browser $browser) use ($user, $contacts) {
@@ -71,35 +71,35 @@ class ContactsTest extends DuskTestCase
     {
         $user = User::factory()->create();
         $company = Company::factory()->create([
-            'manufacturer' => 'Test Manufacturer'
+            'manufacturer' => 'Test Manufacturer',
         ]);
         $contact1 = Contact::factory()->create([
             'company_id' => $company->id,
             'first_name' => 'Unique',
-            'last_name' => 'Person' . time() // Ensure uniqueness
+            'last_name' => 'Person'.time(), // Ensure uniqueness
         ]);
         $contact2 = Contact::factory()->create([
             'company_id' => $company->id,
-            'first_name' => 'Another', 
-            'last_name' => 'Contact' . time() // Ensure uniqueness
+            'first_name' => 'Another',
+            'last_name' => 'Contact'.time(), // Ensure uniqueness
         ]);
 
         $this->browse(function (Browser $browser) use ($user, $contact1, $contact2) {
             $browser->loginAs($user)
                 ->visit('/contacts')
                 ->assertPathIs('/contacts');
-            
+
             // Verify the contacts were created in the database
             $this->assertDatabaseHas('contacts', [
                 'id' => $contact1->id,
                 'first_name' => $contact1->first_name,
-                'last_name' => $contact1->last_name
+                'last_name' => $contact1->last_name,
             ]);
-            
+
             $this->assertDatabaseHas('contacts', [
                 'id' => $contact2->id,
                 'first_name' => $contact2->first_name,
-                'last_name' => $contact2->last_name
+                'last_name' => $contact2->last_name,
             ]);
         });
     }

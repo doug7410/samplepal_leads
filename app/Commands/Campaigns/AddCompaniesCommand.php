@@ -11,12 +11,12 @@ class AddCompaniesCommand extends CampaignCommand
      * Company IDs to add
      */
     protected array $companyIds;
-    
+
     /**
      * Campaign service
      */
     protected CampaignService $campaignService;
-    
+
     /**
      * Create a new AddCompaniesCommand instance
      */
@@ -26,7 +26,7 @@ class AddCompaniesCommand extends CampaignCommand
         $this->companyIds = $companyIds;
         $this->campaignService = app(CampaignService::class);
     }
-    
+
     /**
      * Execute the command to add companies to the campaign
      *

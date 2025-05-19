@@ -43,20 +43,16 @@ class CreateCampaignPage extends Page
 
     /**
      * Fill and submit the campaign form.
-     *
-     * @param Browser $browser
-     * @param array $data
-     * @return Browser
      */
     public function createCampaign(Browser $browser, array $data): Browser
     {
         $browser->type('@name', $data['name'])
-                ->type('@subject', $data['subject'])
-                ->type('@sender_name', $data['sender_name'])
-                ->type('@sender_email', $data['sender_email'])
-                ->type('@content', $data['content'])
-                ->click('@submit-button');
-        
+            ->type('@subject', $data['subject'])
+            ->type('@sender_name', $data['sender_name'])
+            ->type('@sender_email', $data['sender_email'])
+            ->type('@content', $data['content'])
+            ->click('@submit-button');
+
         return $browser->waitForLocation('/campaigns');
     }
 }

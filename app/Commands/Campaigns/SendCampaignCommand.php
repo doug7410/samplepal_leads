@@ -12,7 +12,7 @@ class SendCampaignCommand extends CampaignCommand
      * Campaign service
      */
     protected CampaignService $campaignService;
-    
+
     /**
      * Create a new SendCampaignCommand instance
      */
@@ -21,7 +21,7 @@ class SendCampaignCommand extends CampaignCommand
         parent::__construct($campaign);
         $this->campaignService = app(CampaignService::class);
     }
-    
+
     /**
      * Execute the command to send the campaign
      *
@@ -33,7 +33,7 @@ class SendCampaignCommand extends CampaignCommand
         if ($this->campaign->type === Campaign::TYPE_COMPANY) {
             $this->campaignService->prepareCompanyContactsForProcessing($this->campaign);
         }
-        
+
         // Use the state pattern to update the status
         $result = $this->campaign->send();
 

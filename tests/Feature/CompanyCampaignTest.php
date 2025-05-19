@@ -25,7 +25,7 @@ class CompanyCampaignTest extends TestCase
             'content' => '<p>Hello {{recipients}},</p><p>This is a company campaign test.</p>',
             'from_email' => 'test@example.com',
             'type' => 'company',
-            'company_ids' => [$company->id]
+            'company_ids' => [$company->id],
         ]);
 
         $response->assertRedirect();
@@ -33,7 +33,7 @@ class CompanyCampaignTest extends TestCase
 
         $this->assertDatabaseHas('campaigns', [
             'name' => 'Test Company Campaign',
-            'type' => 'company'
+            'type' => 'company',
         ]);
 
         $campaign = Campaign::where('name', 'Test Company Campaign')->first();
@@ -42,7 +42,7 @@ class CompanyCampaignTest extends TestCase
         // Check that company was associated with campaign
         $this->assertDatabaseHas('campaign_companies', [
             'campaign_id' => $campaign->id,
-            'company_id' => $company->id
+            'company_id' => $company->id,
         ]);
     }
 
@@ -58,15 +58,15 @@ class CompanyCampaignTest extends TestCase
             'company_id' => $company->id,
             'first_name' => 'Doug',
             'last_name' => 'Steinberg',
-            'email' => 'doug@example.com'
+            'email' => 'doug@example.com',
         ]);
-        
+
         $angela = Contact::factory()->create([
             'user_id' => $user->id,
             'company_id' => $company->id,
             'first_name' => 'Angela',
             'last_name' => 'Todd',
-            'email' => 'angela@example.com'
+            'email' => 'angela@example.com',
         ]);
 
         // Create campaign and associate company
@@ -75,12 +75,12 @@ class CompanyCampaignTest extends TestCase
             'name' => 'Company Campaign Test',
             'subject' => 'Hello {{recipients}}',
             'content' => '<p>Hello {{recipients}},</p><p>This is a test.</p>',
-            'type' => 'company'
+            'type' => 'company',
         ]);
 
         // Send the request to add company
         $response = $this->actingAs($user)->post(route('campaigns.add-companies', $campaign), [
-            'company_ids' => [$company->id]
+            'company_ids' => [$company->id],
         ]);
 
         $response->assertRedirect();
@@ -107,43 +107,43 @@ class CompanyCampaignTest extends TestCase
     public function company_campaign_processes_all_contacts_when_sent()
     {
         $this->withoutExceptionHandling();
-        
+
         $user = User::factory()->create();
         $company = Company::factory()->create(['user_id' => $user->id]);
-        
+
         // Create multiple contacts for the company
         $contacts = Contact::factory()->count(3)->create([
             'user_id' => $user->id,
-            'company_id' => $company->id
+            'company_id' => $company->id,
         ]);
-        
+
         // Create a company campaign
         $campaign = Campaign::factory()->create([
             'user_id' => $user->id,
             'type' => 'company',
-            'status' => Campaign::STATUS_DRAFT
+            'status' => Campaign::STATUS_DRAFT,
         ]);
-        
+
         // Associate company with campaign
         $this->actingAs($user)->post(route('campaigns.add-companies', $campaign), [
-            'company_ids' => [$company->id]
+            'company_ids' => [$company->id],
         ]);
-        
+
         // Send the campaign
         $this->actingAs($user)->post(route('campaigns.send', $campaign));
-        
+
         // Refresh campaign from database
         $campaign->refresh();
-        
+
         // Assert campaign status is now completed or in_progress
         $this->assertTrue(
             in_array($campaign->status, [Campaign::STATUS_COMPLETED, Campaign::STATUS_IN_PROGRESS]),
             "Campaign status should be either completed or in_progress, but got {$campaign->status}"
         );
-        
+
         // Assert campaign contacts were created for all contacts in the company
         $this->assertCount($contacts->count(), $campaign->campaignContacts);
-        
+
         // Ensure all contacts from the company are in the campaign
         foreach ($contacts as $contact) {
             $this->assertDatabaseHas('campaign_contacts', [

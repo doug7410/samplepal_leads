@@ -41,9 +41,6 @@ class CampaignsPage extends Page
 
     /**
      * Click the create campaign button.
-     *
-     * @param Browser $browser
-     * @return Browser
      */
     public function createCampaign(Browser $browser): Browser
     {
@@ -53,10 +50,6 @@ class CampaignsPage extends Page
 
     /**
      * Search for a campaign.
-     *
-     * @param Browser $browser
-     * @param string $query
-     * @return Browser
      */
     public function searchCampaign(Browser $browser, string $query): Browser
     {

@@ -41,12 +41,6 @@ class LoginPage extends Page
 
     /**
      * Login with the given credentials.
-     *
-     * @param Browser $browser
-     * @param string $email
-     * @param string $password
-     * @param bool $remember
-     * @return Browser
      */
     public function login(Browser $browser, string $email, string $password, bool $remember = false): Browser
     {

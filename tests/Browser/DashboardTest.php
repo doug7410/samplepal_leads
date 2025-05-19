@@ -50,11 +50,11 @@ class DashboardTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/dashboard')
                 ->assertPathIs('/dashboard');
-            
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -95,14 +95,14 @@ class DashboardTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($user) {
             $browser->loginAs($user)
                 ->visit('/')
-                // It seems welcome page doesn't redirect as expected, 
+                // It seems welcome page doesn't redirect as expected,
                 // for now we'll just assert that we can visit the welcome page
                 ->assertPathIs('/');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }

@@ -182,16 +182,16 @@ class CampaignService
                         ->where('campaign_id', $campaign->id);
                 })
                 ->get();
-            
+
             // Add them to the campaign
             if ($companies->isNotEmpty()) {
                 $campaign->companies()->attach($companies->pluck('id')->toArray());
             }
-            
+
             return $companies->count();
         });
     }
-    
+
     /**
      * Remove companies from a campaign.
      *
@@ -203,10 +203,10 @@ class CampaignService
             return $campaign->companies()->detach($companyIds);
         });
     }
-    
+
     /**
      * Prepare all contacts from associated companies for processing in a company campaign.
-     * 
+     *
      * @return int Number of contacts added to the campaign
      */
     public function prepareCompanyContactsForProcessing(Campaign $campaign): int
@@ -216,12 +216,12 @@ class CampaignService
             if ($campaign->type !== Campaign::TYPE_COMPANY) {
                 return 0;
             }
-            
+
             $contactsAdded = 0;
-            
+
             // Get all companies associated with this campaign
             $companies = $campaign->companies;
-            
+
             foreach ($companies as $company) {
                 // Get all contacts for this company that have valid emails
                 $contacts = $company->contacts()
@@ -232,7 +232,7 @@ class CampaignService
                             ->where('campaign_id', $campaign->id);
                     })
                     ->get();
-                
+
                 // Add all company contacts to the campaign
                 $contactData = $contacts->map(function ($contact) use ($campaign) {
                     return [
@@ -243,28 +243,29 @@ class CampaignService
                         'updated_at' => now(),
                     ];
                 })->toArray();
-                
-                if (!empty($contactData)) {
+
+                if (! empty($contactData)) {
                     CampaignContact::insert($contactData);
                     $contactsAdded += count($contactData);
                 }
             }
-            
+
             return $contactsAdded;
         });
     }
-    
+
     /**
      * Get a formatted list of recipients for a company.
-     * 
+     *
      * @return string Formatted recipient list (e.g., "Doug, Angela, and John")
      */
     public function getRecipientsListForCompany(Company $company): string
     {
         $contacts = $company->contacts()->whereNotNull('email')->get();
+
         return RecipientsFormatter::format($contacts);
     }
-    
+
     /**
      * Get campaign statistics.
      */

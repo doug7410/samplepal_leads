@@ -60,7 +60,7 @@ class Company extends Model
     {
         return $this->hasMany(Contact::class);
     }
-    
+
     /**
      * Get the campaigns associated with this company.
      */

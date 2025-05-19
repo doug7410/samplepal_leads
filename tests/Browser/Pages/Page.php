@@ -18,11 +18,11 @@ abstract class Page extends BasePage
             '@app-sidebar' => '.app-sidebar',
             '@app-content' => '.app-content',
             '@app-header' => '.app-header',
-            
+
             // User menu
             '@user-menu' => '.nav-user button',
             '@logout-button' => '[data-testid="logout-button"]',
-            
+
             // Common form elements
             '@submit-button' => 'button[type="submit"]',
             '@cancel-button' => 'button[data-cancel]',

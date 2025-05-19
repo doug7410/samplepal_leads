@@ -16,16 +16,16 @@ return new class extends Migration
         if (config('database.default') === 'sqlite') {
             // Get the existing table data
             $campaignContacts = DB::table('campaign_contacts')->get();
-            
+
             // Backup existing constraints
             $foreignKeys = [];
             foreach (DB::select("PRAGMA foreign_key_list('campaign_contacts')") as $fk) {
                 $foreignKeys[] = $fk;
             }
-            
+
             // Drop existing table
             Schema::dropIfExists('campaign_contacts');
-            
+
             // Recreate the table with the new enum values
             Schema::create('campaign_contacts', function (Blueprint $table) {
                 $table->id();
@@ -33,8 +33,8 @@ return new class extends Migration
                 $table->foreignId('contact_id')->constrained()->onDelete('cascade');
                 $table->enum('status', [
                     'pending', 'processing', 'sent', 'delivered',
-                    'opened', 'clicked', 'responded', 'bounced', 
-                    'failed', 'cancelled'
+                    'opened', 'clicked', 'responded', 'bounced',
+                    'failed', 'cancelled',
                 ])->default('pending');
                 $table->string('message_id')->nullable(); // For tracking
                 $table->timestamp('sent_at')->nullable();
@@ -45,11 +45,11 @@ return new class extends Migration
                 $table->timestamp('failed_at')->nullable();
                 $table->text('failure_reason')->nullable();
                 $table->timestamps();
-                
+
                 // Ensure each contact is only added once per campaign
                 $table->unique(['campaign_id', 'contact_id']);
             });
-            
+
             // Restore the data
             foreach ($campaignContacts as $cc) {
                 // Convert any objects to arrays for insertion
@@ -73,7 +73,7 @@ return new class extends Migration
         if (config('database.default') === 'sqlite') {
             // Get the existing table data
             $campaignContacts = DB::table('campaign_contacts')->get();
-            
+
             // First, convert any 'cancelled' status to 'failed' for backward compatibility
             foreach ($campaignContacts as $cc) {
                 if ($cc->status === 'cancelled') {
@@ -82,19 +82,19 @@ return new class extends Migration
                         ->update(['status' => 'failed']);
                 }
             }
-            
+
             // Refresh the data
             $campaignContacts = DB::table('campaign_contacts')->get();
-            
+
             // Backup existing constraints
             $foreignKeys = [];
             foreach (DB::select("PRAGMA foreign_key_list('campaign_contacts')") as $fk) {
                 $foreignKeys[] = $fk;
             }
-            
+
             // Drop existing table
             Schema::dropIfExists('campaign_contacts');
-            
+
             // Recreate the table with the original enum values
             Schema::create('campaign_contacts', function (Blueprint $table) {
                 $table->id();
@@ -102,8 +102,8 @@ return new class extends Migration
                 $table->foreignId('contact_id')->constrained()->onDelete('cascade');
                 $table->enum('status', [
                     'pending', 'processing', 'sent', 'delivered',
-                    'opened', 'clicked', 'responded', 'bounced', 
-                    'failed'
+                    'opened', 'clicked', 'responded', 'bounced',
+                    'failed',
                 ])->default('pending');
                 $table->string('message_id')->nullable(); // For tracking
                 $table->timestamp('sent_at')->nullable();
@@ -114,11 +114,11 @@ return new class extends Migration
                 $table->timestamp('failed_at')->nullable();
                 $table->text('failure_reason')->nullable();
                 $table->timestamps();
-                
+
                 // Ensure each contact is only added once per campaign
                 $table->unique(['campaign_id', 'contact_id']);
             });
-            
+
             // Restore the data
             foreach ($campaignContacts as $cc) {
                 // Convert any objects to arrays for insertion

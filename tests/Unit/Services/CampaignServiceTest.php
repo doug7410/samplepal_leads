@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services;
 
 use App\Models\Campaign;
-use App\Models\CampaignContact;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\User;
@@ -16,12 +15,13 @@ class CampaignServiceTest extends TestCase
     use RefreshDatabase;
 
     private CampaignService $campaignService;
+
     private User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->campaignService = new CampaignService();
+        $this->campaignService = new CampaignService;
         $this->user = User::factory()->create();
     }
 
@@ -36,7 +36,7 @@ class CampaignServiceTest extends TestCase
             'user_id' => $this->user->id,
             'from_email' => 'test@example.com',
             'from_name' => 'Test Sender',
-            'type' => 'company'
+            'type' => 'company',
         ];
 
         $campaign = $this->campaignService->createCampaign($data);
@@ -44,7 +44,7 @@ class CampaignServiceTest extends TestCase
         $this->assertDatabaseHas('campaigns', [
             'id' => $campaign->id,
             'name' => 'Test Company Campaign',
-            'type' => 'company'
+            'type' => 'company',
         ]);
     }
 
@@ -55,7 +55,7 @@ class CampaignServiceTest extends TestCase
         $campaign = Campaign::factory()
             ->companyCampaign()
             ->create([
-                'user_id' => $this->user->id
+                'user_id' => $this->user->id,
             ]);
 
         // Create companies
@@ -76,23 +76,23 @@ class CampaignServiceTest extends TestCase
         $campaign = Campaign::factory()
             ->companyCampaign()
             ->create([
-                'user_id' => $this->user->id
+                'user_id' => $this->user->id,
             ]);
 
         // Create company with contacts
         $company = Company::factory()->create(['user_id' => $this->user->id]);
-        
+
         // Create contacts for the company
         $contact1 = Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
-            'email' => 'contact1@example.com'
+            'email' => 'contact1@example.com',
         ]);
-        
+
         $contact2 = Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
-            'email' => 'contact2@example.com'
+            'email' => 'contact2@example.com',
         ]);
 
         // Add company to campaign
@@ -100,18 +100,18 @@ class CampaignServiceTest extends TestCase
 
         // Process the campaign to generate campaign_contacts records
         $result = $this->campaignService->prepareCompanyContactsForProcessing($campaign);
-        
+
         // Assert contacts were added to campaign
         $this->assertEquals(2, $result);
         $this->assertDatabaseHas('campaign_contacts', [
             'campaign_id' => $campaign->id,
             'contact_id' => $contact1->id,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
         $this->assertDatabaseHas('campaign_contacts', [
             'campaign_id' => $campaign->id,
             'contact_id' => $contact2->id,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
     }
 
@@ -122,27 +122,27 @@ class CampaignServiceTest extends TestCase
         $campaign = Campaign::factory()
             ->companyCampaign()
             ->create([
-                'user_id' => $this->user->id
+                'user_id' => $this->user->id,
             ]);
 
         // Create company with contacts
         $company = Company::factory()->create(['user_id' => $this->user->id]);
-        
+
         // Create contacts for the company
         Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
             'first_name' => 'Doug',
             'last_name' => 'Steinberg',
-            'email' => 'doug@example.com'
+            'email' => 'doug@example.com',
         ]);
-        
+
         Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
             'first_name' => 'Angela',
             'last_name' => 'Todd',
-            'email' => 'angela@example.com'
+            'email' => 'angela@example.com',
         ]);
 
         // Add company to campaign
@@ -150,7 +150,7 @@ class CampaignServiceTest extends TestCase
 
         // Get recipients for the company
         $recipientsList = $this->campaignService->getRecipientsListForCompany($company);
-        
+
         // Assert correct format for recipients
         $this->assertEquals('Doug and Angela', $recipientsList);
     }
@@ -162,35 +162,35 @@ class CampaignServiceTest extends TestCase
         $campaign = Campaign::factory()
             ->companyCampaign()
             ->create([
-                'user_id' => $this->user->id
+                'user_id' => $this->user->id,
             ]);
 
         // Create company with contacts
         $company = Company::factory()->create(['user_id' => $this->user->id]);
-        
+
         // Create contacts with duplicate first names
         Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
             'first_name' => 'Doug',
             'last_name' => 'Steinberg',
-            'email' => 'doug.s@example.com'
+            'email' => 'doug.s@example.com',
         ]);
-        
+
         Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
             'first_name' => 'Doug',
             'last_name' => 'Todd',
-            'email' => 'doug.t@example.com'
+            'email' => 'doug.t@example.com',
         ]);
-        
+
         Contact::factory()->create([
             'user_id' => $this->user->id,
             'company_id' => $company->id,
             'first_name' => 'Angela',
             'last_name' => 'Smith',
-            'email' => 'angela@example.com'
+            'email' => 'angela@example.com',
         ]);
 
         // Add company to campaign
@@ -198,7 +198,7 @@ class CampaignServiceTest extends TestCase
 
         // Get recipients for the company
         $recipientsList = $this->campaignService->getRecipientsListForCompany($company);
-        
+
         // Assert correct format with last names for duplicate first names
         $this->assertEquals('Doug Steinberg, Doug Todd and Angela', $recipientsList);
     }

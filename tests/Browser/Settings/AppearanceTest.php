@@ -5,7 +5,6 @@ namespace Tests\Browser\Settings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
-use Tests\Browser\Pages\Settings\AppearancePage;
 use Tests\DuskTestCase;
 
 class AppearanceTest extends DuskTestCase
@@ -23,11 +22,11 @@ class AppearanceTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/appearance')
                 ->assertPathIs('/settings/appearance');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -55,11 +54,11 @@ class AppearanceTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/appearance')
                 ->assertPathIs('/settings/appearance');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }

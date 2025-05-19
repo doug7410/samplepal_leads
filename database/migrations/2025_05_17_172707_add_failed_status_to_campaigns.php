@@ -16,16 +16,16 @@ return new class extends Migration
         if (config('database.default') === 'sqlite') {
             // Get the existing table data
             $campaigns = DB::table('campaigns')->get();
-            
+
             // Backup existing constraints
             $foreignKeys = [];
             foreach (DB::select("PRAGMA foreign_key_list('campaigns')") as $fk) {
                 $foreignKeys[] = $fk;
             }
-            
+
             // Drop existing table
             Schema::dropIfExists('campaigns');
-            
+
             // Recreate the table with the new enum values
             Schema::create('campaigns', function (Blueprint $table) {
                 $table->id();
@@ -43,7 +43,7 @@ return new class extends Migration
                 $table->json('filter_criteria')->nullable(); // For targeting specific contacts
                 $table->timestamps();
             });
-            
+
             // Restore the data
             foreach ($campaigns as $campaign) {
                 // Convert any objects to arrays for insertion
@@ -67,7 +67,7 @@ return new class extends Migration
         if (config('database.default') === 'sqlite') {
             // Get the existing table data
             $campaigns = DB::table('campaigns')->get();
-            
+
             // First, convert any 'failed' status to 'draft' for backward compatibility
             foreach ($campaigns as $campaign) {
                 if ($campaign->status === 'failed') {
@@ -76,19 +76,19 @@ return new class extends Migration
                         ->update(['status' => 'draft']);
                 }
             }
-            
+
             // Refresh the data
             $campaigns = DB::table('campaigns')->get();
-            
+
             // Backup existing constraints
             $foreignKeys = [];
             foreach (DB::select("PRAGMA foreign_key_list('campaigns')") as $fk) {
                 $foreignKeys[] = $fk;
             }
-            
+
             // Drop existing table
             Schema::dropIfExists('campaigns');
-            
+
             // Recreate the table with the original enum values
             Schema::create('campaigns', function (Blueprint $table) {
                 $table->id();
@@ -106,7 +106,7 @@ return new class extends Migration
                 $table->json('filter_criteria')->nullable(); // For targeting specific contacts
                 $table->timestamps();
             });
-            
+
             // Restore the data
             foreach ($campaigns as $campaign) {
                 // Convert any objects to arrays for insertion

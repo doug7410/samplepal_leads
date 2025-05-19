@@ -5,7 +5,6 @@ namespace Tests\Browser\Settings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
-use Tests\Browser\Pages\Settings\PasswordPage;
 use Tests\DuskTestCase;
 
 class PasswordTest extends DuskTestCase
@@ -23,11 +22,11 @@ class PasswordTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/password')
                 ->assertPathIs('/settings/password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -55,11 +54,11 @@ class PasswordTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/password')
                 ->assertPathIs('/settings/password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -75,11 +74,11 @@ class PasswordTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/password')
                 ->assertPathIs('/settings/password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -95,11 +94,11 @@ class PasswordTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/password')
                 ->assertPathIs('/settings/password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -115,11 +114,11 @@ class PasswordTest extends DuskTestCase
             $browser->loginAs($user)
                 ->visit('/settings/password')
                 ->assertPathIs('/settings/password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }

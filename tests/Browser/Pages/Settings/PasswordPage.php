@@ -40,11 +40,6 @@ class PasswordPage extends Page
 
     /**
      * Update the user password.
-     *
-     * @param Browser $browser
-     * @param string $currentPassword
-     * @param string $newPassword
-     * @return Browser
      */
     public function updatePassword(Browser $browser, string $currentPassword, string $newPassword): Browser
     {

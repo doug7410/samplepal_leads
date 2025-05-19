@@ -42,11 +42,6 @@ class ProfilePage extends Page
 
     /**
      * Update the user profile information.
-     *
-     * @param Browser $browser
-     * @param string $name
-     * @param string $email
-     * @return Browser
      */
     public function updateProfile(Browser $browser, string $name, string $email): Browser
     {
@@ -58,10 +53,6 @@ class ProfilePage extends Page
 
     /**
      * Delete the user account.
-     *
-     * @param Browser $browser
-     * @param string $password
-     * @return Browser
      */
     public function deleteAccount(Browser $browser, string $password): Browser
     {
@@ -69,7 +60,7 @@ class ProfilePage extends Page
             ->waitFor('#password')
             ->type('@confirm-password', $password)
             ->click('@confirm-button');
-        
+
         return $browser->waitForLocation('/login');
     }
 }

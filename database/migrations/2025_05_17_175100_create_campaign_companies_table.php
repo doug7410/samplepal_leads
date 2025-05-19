@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('campaign_id')->constrained()->onDelete('cascade');
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->timestamps();
-            
+
             // Ensure each company is only added once per campaign
             $table->unique(['campaign_id', 'company_id']);
         });

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('companies', function (Blueprint $table) {
             // Add user_id column if it doesn't exist
-            if (!Schema::hasColumn('companies', 'user_id')) {
+            if (! Schema::hasColumn('companies', 'user_id')) {
                 $table->foreignId('user_id')->nullable()->after('contact_email')->constrained();
             }
         });

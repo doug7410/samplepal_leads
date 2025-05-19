@@ -41,10 +41,6 @@ class ContactsPage extends Page
 
     /**
      * Search for a contact.
-     *
-     * @param Browser $browser
-     * @param string $query
-     * @return Browser
      */
     public function searchContact(Browser $browser, string $query): Browser
     {

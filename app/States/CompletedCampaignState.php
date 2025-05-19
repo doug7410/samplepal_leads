@@ -58,13 +58,13 @@ class CompletedCampaignState extends AbstractCampaignState
             $campaign->scheduled_at = null;
             $campaign->completed_at = null;
             $campaign->save();
-            
+
             Log::info("Campaign #{$campaign->id} reset to draft status");
-            
+
             return true;
         } catch (\Exception $e) {
-            Log::error('Error resetting campaign: ' . $e->getMessage());
-            
+            Log::error('Error resetting campaign: '.$e->getMessage());
+
             return false;
         }
     }
@@ -75,7 +75,7 @@ class CompletedCampaignState extends AbstractCampaignState
     public function getAllowedTransitions(): array
     {
         return [
-            Campaign::STATUS_DRAFT // Allow transition back to draft
+            Campaign::STATUS_DRAFT, // Allow transition back to draft
         ];
     }
 }

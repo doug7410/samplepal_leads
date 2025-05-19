@@ -41,10 +41,6 @@ class CompaniesPage extends Page
 
     /**
      * Search for a company.
-     *
-     * @param Browser $browser
-     * @param string $query
-     * @return Browser
      */
     public function searchCompany(Browser $browser, string $query): Browser
     {

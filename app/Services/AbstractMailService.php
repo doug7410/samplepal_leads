@@ -156,7 +156,7 @@ abstract class AbstractMailService implements MailServiceInterface
             '{{company}}' => optional($contact->company)->name ?? '',
             '{{job_title}}' => $contact->job_title ?? '',
         ];
-        
+
         // Handle {{recipients}} variable for company campaigns
         if (strpos($content, '{{recipients}}') !== false && $contact->company_id) {
             // Get all contacts for the company
@@ -164,10 +164,10 @@ abstract class AbstractMailService implements MailServiceInterface
                 ->whereNotNull('email')
                 ->where('id', '!=', $contact->id) // Exclude current contact
                 ->get();
-            
+
             // Add current contact to the beginning
             $companyContacts->prepend($contact);
-            
+
             // Format the recipients list
             $replacements['{{recipients}}'] = RecipientsFormatter::format($companyContacts);
         }

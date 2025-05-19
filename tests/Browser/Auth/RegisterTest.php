@@ -32,14 +32,14 @@ class RegisterTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit('/register')
                 ->assertPathIs('/register');
-                
+
             // We'll create a test user directly for database assertion
             $user = User::factory()->create();
-            
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }
@@ -65,11 +65,11 @@ class RegisterTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($existingUser) {
             $browser->visit('/register')
                 ->assertPathIs('/register');
-                
+
             // Verify existing user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $existingUser->id,
-                'email' => $existingUser->email
+                'email' => $existingUser->email,
             ]);
         });
     }

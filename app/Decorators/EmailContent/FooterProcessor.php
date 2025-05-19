@@ -32,7 +32,7 @@ class FooterProcessor extends EmailContentDecorator
                 'token' => $this->generateUnsubscribeToken($campaign, $contact),
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error generating unsubscribe URL: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Error generating unsubscribe URL: '.$e->getMessage());
             $unsubscribeUrl = '#'; // Fallback to a harmless URL if route generation fails
         }
 

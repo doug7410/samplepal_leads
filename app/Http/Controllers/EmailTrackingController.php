@@ -29,7 +29,7 @@ class EmailTrackingController extends Controller
      */
     public function trackOpen(Request $request, Campaign $campaign, Contact $contact): Response
     {
-        Log::info($request->query());
+        dd($request->route()->parameters());
         $token = $request->query('token');
 
         // Validate the token
@@ -365,7 +365,7 @@ class EmailTrackingController extends Controller
         $token = $request->query('token');
 
         // Verify the unsubscribe token is valid
-        if (!$token || !$this->verifyUnsubscribeToken($token, $campaign->id, $contact->id, $contact->email)) {
+        if (! $token || ! $this->verifyUnsubscribeToken($token, $campaign->id, $contact->id, $contact->email)) {
             return response('Invalid unsubscribe token', 403);
         }
 
@@ -388,7 +388,7 @@ class EmailTrackingController extends Controller
                 'campaign' => $campaign,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error processing unsubscribe request: ' . $e->getMessage());
+            Log::error('Error processing unsubscribe request: '.$e->getMessage());
 
             return response('An error occurred while processing your unsubscribe request. Please try again later.', 500);
         }
@@ -400,7 +400,7 @@ class EmailTrackingController extends Controller
     protected function verifyUnsubscribeToken(string $token, int $campaignId, int $contactId, string $email): bool
     {
         $key = config('app.key');
-        $data = $campaignId . '|' . $contactId . '|' . $email;
+        $data = $campaignId.'|'.$contactId.'|'.$email;
         $expectedToken = hash_hmac('sha256', $data, $key);
 
         return hash_equals($expectedToken, $token);

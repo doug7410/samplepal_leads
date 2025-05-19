@@ -28,7 +28,7 @@ class CampaignContact extends Model
     public const STATUS_BOUNCED = 'bounced';
 
     public const STATUS_FAILED = 'failed';
-    
+
     public const STATUS_UNSUBSCRIBED = 'unsubscribed';
 
     public const STATUS_CANCELLED = 'cancelled';

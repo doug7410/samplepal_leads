@@ -13,9 +13,6 @@ abstract class BaseBrowserTestCase extends DuskTestCase
 
     /**
      * Create a user that can be used for testing.
-     *
-     * @param array $attributes
-     * @return User
      */
     protected function createUser(array $attributes = []): User
     {
@@ -24,12 +21,8 @@ abstract class BaseBrowserTestCase extends DuskTestCase
 
     /**
      * Login the given user or create a new one.
-     *
-     * @param Browser $browser
-     * @param User|null $user
-     * @return Browser
      */
-    protected function login(Browser $browser, User $user = null): Browser
+    protected function login(Browser $browser, ?User $user = null): Browser
     {
         $user = $user ?? $this->createUser();
 
@@ -42,9 +35,6 @@ abstract class BaseBrowserTestCase extends DuskTestCase
 
     /**
      * Log out the current user.
-     *
-     * @param Browser $browser
-     * @return Browser
      */
     protected function logout(Browser $browser): Browser
     {
@@ -56,16 +46,11 @@ abstract class BaseBrowserTestCase extends DuskTestCase
 
     /**
      * Navigate to a route using the given route name and parameters.
-     *
-     * @param Browser $browser
-     * @param string $routeName
-     * @param array $parameters
-     * @return Browser
      */
     protected function navigateToRoute(Browser $browser, string $routeName, array $parameters = []): Browser
     {
         $url = route($routeName, $parameters);
-        
+
         return $browser->visit($url);
     }
 }

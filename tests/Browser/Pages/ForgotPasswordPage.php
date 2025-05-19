@@ -38,10 +38,6 @@ class ForgotPasswordPage extends Page
 
     /**
      * Request a password reset link.
-     *
-     * @param Browser $browser
-     * @param string $email
-     * @return Browser
      */
     public function requestPasswordReset(Browser $browser, string $email): Browser
     {

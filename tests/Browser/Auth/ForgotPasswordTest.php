@@ -32,11 +32,11 @@ class ForgotPasswordTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($user) {
             $browser->visit('/forgot-password')
                 ->assertPathIs('/forgot-password');
-                
+
             // Verify user exists in database
             $this->assertDatabaseHas('users', [
                 'id' => $user->id,
-                'email' => $user->email
+                'email' => $user->email,
             ]);
         });
     }

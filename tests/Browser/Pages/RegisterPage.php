@@ -41,12 +41,6 @@ class RegisterPage extends Page
 
     /**
      * Register a new user with the given information.
-     *
-     * @param Browser $browser
-     * @param string $name
-     * @param string $email
-     * @param string $password
-     * @return Browser
      */
     public function register(Browser $browser, string $name, string $email, string $password): Browser
     {

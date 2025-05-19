@@ -28,9 +28,10 @@ class StopCampaignCommand extends CampaignCommand
                 $contact->failure_reason = null;
                 $contact->save();
             }
+
             return true;
         }
-        
+
         // For in-progress, paused, or scheduled campaigns, reset to draft
         if (in_array($this->campaign->status, ['in_progress', 'paused', 'scheduled', 'failed'])) {
             // Reset all contacts to pending
@@ -46,16 +47,16 @@ class StopCampaignCommand extends CampaignCommand
                 $contact->failure_reason = null;
                 $contact->save();
             }
-            
+
             // Reset campaign status to draft
             $this->campaign->status = 'draft';
             $this->campaign->scheduled_at = null;
             $this->campaign->completed_at = null;
             $this->campaign->save();
-            
+
             return true;
         }
-        
+
         // For completed campaigns, leave sent contacts alone but reset status to draft
         if ($this->campaign->status === 'completed') {
             // Mark pending, processing, or failed contacts as pending again
@@ -64,22 +65,22 @@ class StopCampaignCommand extends CampaignCommand
                     CampaignContact::STATUS_PENDING,
                     CampaignContact::STATUS_PROCESSING,
                     CampaignContact::STATUS_FAILED,
-                    CampaignContact::STATUS_CANCELLED
+                    CampaignContact::STATUS_CANCELLED,
                 ])->get() as $contact) {
-                
+
                 $contact->status = CampaignContact::STATUS_PENDING;
                 $contact->message_id = null;
                 $contact->failed_at = null;
                 $contact->failure_reason = null;
                 $contact->save();
             }
-            
+
             // Reset campaign status to draft
             $this->campaign->status = 'draft';
             $this->campaign->scheduled_at = null;
             $this->campaign->completed_at = null;
             $this->campaign->save();
-            
+
             return true;
         }
 
