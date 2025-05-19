@@ -29,7 +29,6 @@ class EmailTrackingController extends Controller
      */
     public function trackOpen(Request $request, Campaign $campaign, Contact $contact): Response
     {
-        dd($request->route()->parameters());
         $token = $request->query('token');
 
         // Validate the token
