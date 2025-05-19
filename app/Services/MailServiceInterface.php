@@ -19,7 +19,7 @@ interface MailServiceInterface
 
     /**
      * Send an email to all contacts in a company
-     * 
+     *
      * @param  Campaign  $campaign  Campaign containing email content and subject
      * @param  \App\Models\Company  $company  Company whose contacts should receive the email
      * @param  array  $options  Additional options for email sending

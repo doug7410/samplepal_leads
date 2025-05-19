@@ -71,8 +71,6 @@ class EmailTrackingControllerTest extends TestCase
         $this->controller = new EmailTrackingController($this->mailService);
     }
 
-
-
     public function test_handle_webhook_processes_valid_resend_event()
     {
         // Mock the webhook secret environment variable
@@ -155,5 +153,4 @@ class EmailTrackingControllerTest extends TestCase
         // Check that no event was recorded
         $this->assertDatabaseCount('email_events', 0);
     }
-
 }

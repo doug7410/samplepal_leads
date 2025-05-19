@@ -10,7 +10,6 @@ use App\Services\MailServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
 
 class EmailTrackingController extends Controller
 {
@@ -266,7 +265,6 @@ class EmailTrackingController extends Controller
             Log::error('Error recording email event: '.$e->getMessage());
         }
     }
-
 
     /**
      * Process unsubscribe request.

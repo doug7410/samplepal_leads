@@ -79,9 +79,9 @@ abstract class AbstractMailService implements MailServiceInterface
     /**
      * Email all contacts in a company
      *
-     * @param Campaign $campaign Campaign containing email content and subject
-     * @param Company $company Company whose contacts should receive the email
-     * @param array $options Additional options for email sending
+     * @param  Campaign  $campaign  Campaign containing email content and subject
+     * @param  Company  $company  Company whose contacts should receive the email
+     * @param  array  $options  Additional options for email sending
      * @return array Array of contact IDs mapped to message IDs or null values
      */
     public function sendEmailToCompany(Campaign $campaign, Company $company, array $options = []): array
@@ -95,6 +95,7 @@ abstract class AbstractMailService implements MailServiceInterface
 
         if ($contacts->isEmpty()) {
             Log::warning("No valid contacts found for company #{$company->id} ({$company->name})");
+
             return $results;
         }
 
@@ -108,7 +109,7 @@ abstract class AbstractMailService implements MailServiceInterface
                     ->where('contact_id', $contact->id)
                     ->first();
 
-                if (!$campaignContact) { //TODO: the mail service should not have to create contacts.
+                if (! $campaignContact) { // TODO: the mail service should not have to create contacts.
                     Log::info("Creating campaign contact record for campaign #{$campaign->id} and contact #{$contact->id}");
                     $campaignContact = new CampaignContact([
                         'campaign_id' => $campaign->id,
@@ -128,7 +129,7 @@ abstract class AbstractMailService implements MailServiceInterface
                     $results[$contact->id] = $campaignContact->status;
                 }
             } catch (\Exception $e) {
-                Log::error("Failed to queue email for contact #{$contact->id} ({$contact->email}): " . $e->getMessage());
+                Log::error("Failed to queue email for contact #{$contact->id} ({$contact->email}): ".$e->getMessage());
                 $results[$contact->id] = null;
             }
         }

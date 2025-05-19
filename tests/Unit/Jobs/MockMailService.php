@@ -88,39 +88,40 @@ class MockMailService implements MailServiceInterface
 
     /**
      * Send an email to all contacts in a company
-     * 
-     * @param Campaign $campaign Campaign containing email content and subject
-     * @param \App\Models\Company $company Company whose contacts should receive the email
-     * @param array $options Additional options for email sending
+     *
+     * @param  Campaign  $campaign  Campaign containing email content and subject
+     * @param  \App\Models\Company  $company  Company whose contacts should receive the email
+     * @param  array  $options  Additional options for email sending
      * @return array Array of contact IDs mapped to message IDs or null values
      */
     public function sendEmailToCompany(Campaign $campaign, \App\Models\Company $company, array $options = []): array
     {
         Log::info('MockMailService.sendEmailToCompany called');
-        
+
         $results = [];
-        
+
         // Get all contacts for the company
         $contacts = $company->contacts()
             ->whereNotNull('email')
             ->get();
-        
+
         if ($contacts->isEmpty()) {
             Log::warning("No valid contacts found for company #{$company->id} ({$company->name})");
+
             return $results;
         }
-        
+
         // Send email to each contact
         foreach ($contacts as $contact) {
             try {
                 $messageId = $this->sendEmail($campaign, $contact, $options);
                 $results[$contact->id] = $messageId;
             } catch (\Exception $e) {
-                Log::error("Failed to send email to contact #{$contact->id} ({$contact->email}): " . $e->getMessage());
+                Log::error("Failed to send email to contact #{$contact->id} ({$contact->email}): ".$e->getMessage());
                 $results[$contact->id] = null;
             }
         }
-        
+
         return $results;
     }
 

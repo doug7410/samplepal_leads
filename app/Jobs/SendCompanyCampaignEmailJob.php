@@ -43,21 +43,22 @@ class SendCompanyCampaignEmailJob implements ShouldQueue
         // Skip if the campaign is not active
         if ($this->campaign->status !== Campaign::STATUS_IN_PROGRESS) {
             Log::info("Campaign #{$this->campaign->id} is not in progress. Skipping emails to company #{$this->company->id}");
+
             return;
         }
 
         try {
             // Send emails to all company contacts
             Log::info("Sending campaign #{$this->campaign->id} to company #{$this->company->id} ({$this->company->name})");
-            
+
             $results = $mailService->sendEmailToCompany($this->campaign, $this->company);
-            
+
             // Log results
             $successCount = count(array_filter($results));
             $failureCount = count($results) - $successCount;
-            
+
             Log::info("Campaign #{$this->campaign->id} to company #{$this->company->id}: {$successCount} sent, {$failureCount} failed");
-            
+
             if ($failureCount > 0 && $successCount === 0) {
                 // All emails to this company failed
                 Log::error("All emails to company #{$this->company->id} failed for campaign #{$this->campaign->id}");
@@ -70,7 +71,7 @@ class SendCompanyCampaignEmailJob implements ShouldQueue
             }
         } catch (\Exception $e) {
             // Log the error but don't rethrow
-            Log::error("Error sending campaign #{$this->campaign->id} to company #{$this->company->id}: " . $e->getMessage());
+            Log::error("Error sending campaign #{$this->campaign->id} to company #{$this->company->id}: ".$e->getMessage());
         }
     }
 }

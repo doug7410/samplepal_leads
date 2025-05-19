@@ -46,7 +46,7 @@ beforeEach(function () {
     Mail::fake();
 
     // Initialize the mail service
-    $this->mailService = new MailService();
+    $this->mailService = new MailService;
 });
 
 it('parses template variables correctly', function () {
@@ -106,4 +106,3 @@ it('skips sending if campaign contact is not pending', function () {
     // Result should be null
     expect($result)->toBeNull();
 });
-

@@ -318,7 +318,7 @@ class CampaignService
     /**
      * Process company campaigns by dispatching jobs for each company
      *
-     * @param Campaign $campaign The campaign to process
+     * @param  Campaign  $campaign  The campaign to process
      * @return bool Whether the operation was successful
      */
     public function processCompanyCampaign(Campaign $campaign): bool
@@ -332,7 +332,6 @@ class CampaignService
         if ($companies->isEmpty()) {
             return false;
         }
-
 
         foreach ($companies as $company) {
             SendCompanyCampaignEmailJob::dispatch($campaign, $company);

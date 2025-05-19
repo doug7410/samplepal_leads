@@ -2,15 +2,13 @@
 
 namespace App\Jobs\Middleware;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class RateLimitEmailJobs
 {
     /**
      * The rate at which jobs are processed (in seconds).
-     *
-     * @var int
      */
     protected int $throttleSeconds = 1;
 

@@ -20,8 +20,6 @@ class SendCampaignEmailJob implements ShouldQueue
 
     /**
      * Get the middleware the job should pass through.
-     *
-     * @return array
      */
     public function middleware(): array
     {

@@ -94,13 +94,13 @@ class CompanyCampaignTest extends TestCase
         // Verify the campaign status changed to in_progress
         $campaign->refresh();
         $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status);
-        
+
         // Verify the company is associated with the campaign
         $this->assertDatabaseHas('campaign_companies', [
             'campaign_id' => $campaign->id,
             'company_id' => $company->id,
         ]);
-        
+
         // We no longer create campaign contacts for company campaigns in advance
         // Instead we directly process the company contacts when sending
     }
@@ -138,20 +138,20 @@ class CompanyCampaignTest extends TestCase
         $campaign->refresh();
 
         // Assert campaign status is now in_progress
-        $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status, 
+        $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status,
             "Campaign status should be in_progress, but got {$campaign->status}");
 
         // We're no longer using campaign contacts for company campaigns, so we verify that:
-        
+
         // 1. The campaign is in in_progress state
         $this->assertEquals(Campaign::STATUS_IN_PROGRESS, $campaign->status);
-        
+
         // 2. The company is associated with the campaign
         $this->assertDatabaseHas('campaign_companies', [
             'campaign_id' => $campaign->id,
             'company_id' => $company->id,
         ]);
-        
+
         // 3. Each contact is part of the company
         foreach ($contacts as $contact) {
             $this->assertEquals($company->id, $contact->company_id);

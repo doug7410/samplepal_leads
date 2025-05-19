@@ -69,11 +69,11 @@ class MailService extends AbstractMailService
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             Log::error('Error sending email via '.config('mail.default').': '.$errorMessage);
-            
+
             // Check for rate limit errors from Resend
             if (strpos($errorMessage, 'Too many requests') !== false) {
                 // Since we can't directly release the job here, we'll just log the error
-                Log::warning("Resend rate limit reached. The job will be retried with backoff.");
+                Log::warning('Resend rate limit reached. The job will be retried with backoff.');
                 throw $e; // Re-throw to trigger the job retry with backoff defined in the job class
             }
 

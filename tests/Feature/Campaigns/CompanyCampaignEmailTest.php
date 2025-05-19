@@ -6,7 +6,6 @@ use App\Models\Campaign;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\User;
-use App\Services\MailService;
 use App\Services\MailServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -20,7 +19,7 @@ class CompanyCampaignEmailTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Prevent actual emails from being sent
         Mail::fake();
     }
@@ -33,27 +32,27 @@ class CompanyCampaignEmailTest extends TestCase
 
         // Create a company
         $company = Company::factory()->create([
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
 
         // Create contacts for the company
         $contacts = Contact::factory()->count(3)->create([
             'company_id' => $company->id,
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
 
         // Create a campaign
         $campaign = Campaign::factory()->create([
             'user_id' => $user->id,
             'type' => Campaign::TYPE_COMPANY,
-            'status' => Campaign::STATUS_IN_PROGRESS
+            'status' => Campaign::STATUS_IN_PROGRESS,
         ]);
 
         // Associate the company with the campaign
         $campaign->companies()->attach($company->id);
 
         // Mock the mail service
-        $mockMailService = new MockMailService();
+        $mockMailService = new MockMailService;
         $this->app->instance(MailServiceInterface::class, $mockMailService);
 
         // Send emails to the company
@@ -75,14 +74,14 @@ class CompanyCampaignEmailTest extends TestCase
 
         // Create a company with no contacts
         $company = Company::factory()->create([
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
 
         // Create a campaign
         $campaign = Campaign::factory()->create([
             'user_id' => $user->id,
             'type' => Campaign::TYPE_COMPANY,
-            'status' => Campaign::STATUS_IN_PROGRESS
+            'status' => Campaign::STATUS_IN_PROGRESS,
         ]);
 
         // Associate the company with the campaign
@@ -106,34 +105,34 @@ class CompanyCampaignEmailTest extends TestCase
 
         // Create a company
         $company = Company::factory()->create([
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
 
         // Create contacts for the company, some with email and some without
         $contactWithEmail = Contact::factory()->create([
             'company_id' => $company->id,
             'user_id' => $user->id,
-            'email' => 'valid@example.com'
+            'email' => 'valid@example.com',
         ]);
-        
+
         $contactWithoutEmail = Contact::factory()->create([
             'company_id' => $company->id,
             'user_id' => $user->id,
-            'email' => null
+            'email' => null,
         ]);
 
         // Create a campaign
         $campaign = Campaign::factory()->create([
             'user_id' => $user->id,
             'type' => Campaign::TYPE_COMPANY,
-            'status' => Campaign::STATUS_IN_PROGRESS
+            'status' => Campaign::STATUS_IN_PROGRESS,
         ]);
 
         // Associate the company with the campaign
         $campaign->companies()->attach($company->id);
 
         // Mock the mail service
-        $mockMailService = new MockMailService();
+        $mockMailService = new MockMailService;
         $this->app->instance(MailServiceInterface::class, $mockMailService);
 
         // Send emails to the company

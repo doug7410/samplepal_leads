@@ -2,7 +2,6 @@
 
 namespace App\States;
 
-use App\Jobs\ProcessCampaignJob;
 use App\Models\Campaign;
 use Illuminate\Support\Facades\Log;
 
@@ -62,35 +61,38 @@ class DraftCampaignState extends AbstractCampaignState
                 $companyCount = $campaign->companies()->count();
                 if ($companyCount === 0) {
                     Log::error('Cannot send company campaign with no companies');
+
                     return false;
                 }
-                
+
                 // Update status to in progress
                 $campaign->status = Campaign::STATUS_IN_PROGRESS;
                 $campaign->save();
-                
+
                 Log::info("Company campaign #{$campaign->id} started with {$companyCount} companies");
-                
+
                 return true;
-            } 
+            }
             // For contact campaigns, check if there are contacts
             else {
                 $contactCount = $campaign->campaignContacts()->count();
                 if ($contactCount === 0) {
                     Log::error('Cannot send contact campaign with no contacts');
+
                     return false;
                 }
-                
+
                 // Update status to in progress
                 $campaign->status = Campaign::STATUS_IN_PROGRESS;
                 $campaign->save();
-                
+
                 Log::info("Contact campaign #{$campaign->id} started with {$contactCount} contacts");
-                
+
                 return true;
             }
         } catch (\Exception $e) {
             Log::error('Error sending campaign: '.$e->getMessage());
+
             return false;
         }
     }
