@@ -26,7 +26,7 @@ class CampaignTestSeeder extends Seeder
             'description' => 'Campaign to introduce new lighting products to Kiwi Tech Lab',
             'subject' => 'Hello {{recipients}} - New Lighting Solutions for Kiwi Tech Lab',
             'content' => '<p>Hello {{recipients}},</p>
-                        
+
 <p>I wanted to reach out to you all at Kiwi Tech Lab about our latest smart lighting solutions that would be perfect for your new office space.</p>
 
 <p>Our new product line includes:</p>
@@ -41,9 +41,9 @@ class CampaignTestSeeder extends Seeder
 <p>Best regards,<br>
 Angela<br>
 Sample Pal Lighting Solutions</p>',
-            'from_email' => 'angela@samplepall.net',
+            'from_email' => 'angela@samplepal.net',
             'from_name' => 'Angela from Sample Pal',
-            'reply_to' => 'angela@samplepall.net',
+            'reply_to' => 'angela@samplepal.net',
             'status' => Campaign::STATUS_DRAFT,
             'type' => Campaign::TYPE_COMPANY,
             'user_id' => $user->id,

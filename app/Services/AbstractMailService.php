@@ -108,7 +108,7 @@ abstract class AbstractMailService implements MailServiceInterface
                     ->where('contact_id', $contact->id)
                     ->first();
 
-                if (!$campaignContact) { //TODO: the mail service should not have to create contacts. 
+                if (!$campaignContact) { //TODO: the mail service should not have to create contacts.
                     Log::info("Creating campaign contact record for campaign #{$campaign->id} and contact #{$contact->id}");
                     $campaignContact = new CampaignContact([
                         'campaign_id' => $campaign->id,
@@ -120,8 +120,8 @@ abstract class AbstractMailService implements MailServiceInterface
 
                 // Only dispatch job if the status is pending
                 if ($campaignContact->status === CampaignContact::STATUS_PENDING) {
-                    // Dispatch a job to send the email
                     SendCampaignEmailJob::dispatch($campaignContact);
+                    Log::info("Queued email for contact #{$contact->id}");
                     $results[$contact->id] = 'queued';
                 } else {
                     // If already processed, add to results with appropriate status

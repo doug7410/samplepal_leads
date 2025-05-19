@@ -43,9 +43,8 @@ class MailService extends AbstractMailService
         try {
             Log::info("Attempting to send email to {$contact->email} using ".config('mail.default').' mailer');
 
-            // Use the failover mailer to ensure we try multiple options in sequence
-            Mail::mailer('failover')
-                ->to($contact->email)
+            // Use the default mailer configured in .env
+            Mail::to($contact->email)
                 ->send($mailable);
 
             // If we get here, the email was sent successfully
@@ -68,26 +67,32 @@ class MailService extends AbstractMailService
 
             return $messageId;
         } catch (\Exception $e) {
-            Log::error('Error sending email via '.config('mail.default').': '.$e->getMessage());
+            $errorMessage = $e->getMessage();
+            Log::error('Error sending email via '.config('mail.default').': '.$errorMessage);
+            
+            // Check for rate limit errors from Resend
+            if (strpos($errorMessage, 'Too many requests') !== false) {
+                // Since we can't directly release the job here, we'll just log the error
+                Log::warning("Resend rate limit reached. The job will be retried with backoff.");
+                throw $e; // Re-throw to trigger the job retry with backoff defined in the job class
+            }
 
-            // Try fallback mailer if primary fails
-            if ($this->shouldAttemptFallback()) {
-                try {
-                    Log::info("Attempting fallback to log mailer for {$contact->email}");
+            // Always attempt fallback to log mailer if it's not a rate limit error
+            try {
+                Log::info("Attempting fallback to log mailer for {$contact->email}");
 
-                    Mail::mailer('log')
-                        ->to($contact->email)
-                        ->send($mailable);
+                Mail::mailer('log')
+                    ->to($contact->email)
+                    ->send($mailable);
 
-                    // If we get here, the fallback email was sent successfully
-                    Log::info('Fallback email sent successfully to log');
+                // If we get here, the fallback email was sent successfully
+                Log::info('Fallback email sent successfully to log');
 
-                    return $messageId; // Return the generated ID
-                } catch (\Exception $fallbackEx) {
-                    Log::error('Fallback mailer also failed: '.$fallbackEx->getMessage());
+                return $messageId; // Return the generated ID
+            } catch (\Exception $fallbackEx) {
+                Log::error('Fallback mailer also failed: '.$fallbackEx->getMessage());
 
-                    return null;
-                }
+                return null;
             }
 
             return null;
@@ -156,10 +161,11 @@ class MailService extends AbstractMailService
     }
 
     /**
-     * Determine if we should attempt a fallback mailer
+     * Determine if we should attempt a fallback mailer - kept for backwards compatibility
+     * but no longer used since we always attempt fallback
      */
     protected function shouldAttemptFallback(): bool
     {
-        return config('mail.default') === 'resend';
+        return true;
     }
 }

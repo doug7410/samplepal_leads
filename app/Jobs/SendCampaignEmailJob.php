@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Jobs\Middleware\RateLimitEmailJobs;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
@@ -16,6 +17,16 @@ use Illuminate\Support\Facades\Log;
 class SendCampaignEmailJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * Get the middleware the job should pass through.
+     *
+     * @return array
+     */
+    public function middleware(): array
+    {
+        return [new RateLimitEmailJobs];
+    }
 
     /**
      * The campaign contact to process.

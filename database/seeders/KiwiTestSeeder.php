@@ -13,7 +13,6 @@ class KiwiTestSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Kiwi Tech Lab company
         $company = Company::create([
             'manufacturer' => 'Kiwi',
             'company_name' => 'Kiwi Tech Lab',
@@ -31,7 +30,6 @@ class KiwiTestSeeder extends Seeder
             'contact_email' => 'doug@kiwitechlab.net',
         ]);
 
-        // Create Doug as a contact
         Contact::create([
             'company_id' => $company->id,
             'first_name' => 'Doug',
@@ -46,12 +44,11 @@ class KiwiTestSeeder extends Seeder
             'relevance_score' => 80,
         ]);
 
-        // Create Angela as a contact
         Contact::create([
             'company_id' => $company->id,
             'first_name' => 'Angela',
             'last_name' => 'Chen',
-            'email' => 'angela@kiwitechlab.net',
+            'email' => 'doug@samplepal.net',
             'cell_phone' => '(415) 555-2345',
             'office_phone' => '(415) 555-8978',
             'job_title' => 'Head of Operations',
@@ -61,12 +58,11 @@ class KiwiTestSeeder extends Seeder
             'relevance_score' => 90,
         ]);
 
-        // Create Michael as a contact
         Contact::create([
             'company_id' => $company->id,
             'first_name' => 'Michael',
             'last_name' => 'Rodriguez',
-            'email' => 'michael@kiwitechlab.net',
+            'email' => 'd.steinberg79@gmail.com',
             'cell_phone' => '(415) 555-3456',
             'office_phone' => '(415) 555-8979',
             'job_title' => 'Lead Engineer',
@@ -76,19 +72,5 @@ class KiwiTestSeeder extends Seeder
             'relevance_score' => 75,
         ]);
 
-        // Create Sophia as a contact
-        Contact::create([
-            'company_id' => $company->id,
-            'first_name' => 'Michael',
-            'last_name' => 'Kim',
-            'email' => 'michael.k@kiwitechlab.net',
-            'cell_phone' => '(415) 555-4567',
-            'office_phone' => '(415) 555-8980',
-            'job_title' => 'Financial Director',
-            'has_been_contacted' => false,
-            'deal_status' => 'none',
-            'notes' => 'Sophia manages budgets and would need to approve any significant purchases for the office.',
-            'relevance_score' => 65,
-        ]);
     }
 }
