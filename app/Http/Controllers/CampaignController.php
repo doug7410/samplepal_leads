@@ -47,7 +47,7 @@ class CampaignController extends Controller
      */
     public function create(): Response
     {
-        $companies = \App\Models\Company::orderBy('company_name')->get();
+        $companies = \App\Models\Company::has('contacts')->orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
 
         return Inertia::render('campaigns/create', [
@@ -129,7 +129,7 @@ class CampaignController extends Controller
         // Load the campaign with its contacts and companies
         $campaign->load('campaignContacts', 'companies');
 
-        $companies = \App\Models\Company::orderBy('company_name')->get();
+        $companies = \App\Models\Company::has('contacts')->orderBy('company_name')->get();
         $contacts = \App\Models\Contact::with('company')->get();
 
         // Get contacts associated with this campaign (for contact campaigns)
