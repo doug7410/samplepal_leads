@@ -296,12 +296,17 @@ class CampaignService
         // Merge with actual counts
         $statuses = array_merge($allStatuses, $statusCounts);
 
-        // Calculate total and delivery rate
+        // Calculate total and rates
         $total = array_sum($statuses);
-        $deliveryRate = $total > 0 ? round(($statuses['delivered'] / $total) * 100, 2) : 0;
-        $openRate = $statuses['delivered'] > 0 ? round(($statuses['opened'] / $statuses['delivered']) * 100, 2) : 0;
-        $clickRate = $statuses['opened'] > 0 ? round(($statuses['clicked'] / $statuses['opened']) * 100, 2) : 0;
-        $responseRate = $statuses['delivered'] > 0 ? round(($statuses['responded'] / $statuses['delivered']) * 100, 2) : 0;
+        
+        // Delivered count includes all emails that were successfully delivered
+        // (delivered, opened, clicked, responded all imply successful delivery)
+        $deliveredCount = $statuses['delivered'] + $statuses['opened'] + $statuses['clicked'] + $statuses['responded'];
+        
+        $deliveryRate = $total > 0 ? round(($deliveredCount / $total) * 100, 2) : 0;
+        $openRate = $deliveredCount > 0 ? round(($statuses['opened'] / $deliveredCount) * 100, 2) : 0;
+        $clickRate = $deliveredCount > 0 ? round(($statuses['clicked'] / $deliveredCount) * 100, 2) : 0;
+        $responseRate = $deliveredCount > 0 ? round(($statuses['responded'] / $deliveredCount) * 100, 2) : 0;
 
         return [
             'total' => $total,

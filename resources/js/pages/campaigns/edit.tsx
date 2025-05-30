@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
+import WysiwygEditor from '@/components/wysiwyg-editor';
 
 interface CampaignEditProps {
   campaign: Campaign;
@@ -397,14 +398,14 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                 {/* Email Content */}
                 <div>
                   <Label htmlFor="content">Email Body</Label>
-                  <Textarea
-                    id="content"
-                    value={data.content}
-                    onChange={(e) => setData('content', e.target.value)}
-                    placeholder="Write your email content here. You can use variables like {{first_name}}, {{last_name}}, {{company}}, etc."
-                    rows={12}
-                    className={errors.content ? 'border-red-500' : ''}
-                  />
+                  <div className="mt-1">
+                    <WysiwygEditor
+                      value={data.content}
+                      onChange={(content) => setData('content', content)}
+                      placeholder="Write your email content here. You can use variables like {{first_name}}, {{last_name}}, {{company}}, etc."
+                      error={!!errors.content}
+                    />
+                  </div>
                   {errors.content && (
                     <div className="text-red-500 text-sm mt-1">{errors.content}</div>
                   )}

@@ -230,12 +230,20 @@ class EmailTrackingController extends Controller
                         $campaignContact->delivered_at = now();
                         break;
                     case 'opened':
+                        // If opened, but not yet delivered, mark as delivered first
+                        if (!$campaignContact->delivered_at) {
+                            $campaignContact->delivered_at = now();
+                        }
                         if ($campaignContact->status != 'clicked' && $campaignContact->status != 'responded') {
                             $campaignContact->status = 'opened';
                         }
                         $campaignContact->opened_at = now();
                         break;
                     case 'clicked':
+                        // If clicked, but not yet delivered, mark as delivered first
+                        if (!$campaignContact->delivered_at) {
+                            $campaignContact->delivered_at = now();
+                        }
                         if ($campaignContact->status != 'responded') {
                             $campaignContact->status = 'clicked';
                         }

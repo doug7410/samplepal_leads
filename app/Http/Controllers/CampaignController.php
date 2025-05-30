@@ -111,7 +111,7 @@ class CampaignController extends Controller
      */
     public function show(Campaign $campaign): Response
     {
-        $campaign->load(['campaignContacts.contact', 'companies']);
+        $campaign->load(['campaignContacts.contact.company', 'companies']);
 
         $statistics = $this->campaignService->getStatistics($campaign);
 

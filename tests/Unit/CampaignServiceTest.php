@@ -247,8 +247,8 @@ it('can calculate campaign statistics', function () {
         ->and($stats['statuses']['responded'])->toBe(1)
         ->and($stats['statuses']['failed'])->toBe(1)
         ->and($stats['rates'])->toBeArray()
-        ->and($stats['rates']['delivery'])->toBe(20.0) // 2 delivered out of 10 total
-        ->and($stats['rates']['open'])->toBe(100.0) // 2 opened out of 2 delivered
-        ->and($stats['rates']['click'])->toBe(50.0) // 1 clicked out of 2 opened
-        ->and($stats['rates']['response'])->toBe(50.0); // 1 responded out of 2 delivered
+        ->and($stats['rates']['delivery'])->toBe(60.0) // 6 delivered (2 delivered + 2 opened + 1 clicked + 1 responded) out of 10 total
+        ->and($stats['rates']['open'])->toBe(33.33) // 2 opened out of 6 delivered
+        ->and($stats['rates']['click'])->toBe(16.67) // 1 clicked out of 6 delivered
+        ->and($stats['rates']['response'])->toBe(16.67); // 1 responded out of 6 delivered
 });
