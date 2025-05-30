@@ -104,10 +104,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
     },
   ];
 
-  // Format the content for display - this would typically render HTML but we're keeping it simple
-  const formattedContent = campaign.content.split('\\n').map((line, i) => (
-    <p key={i} className="mb-2">{line}</p>
-  ));
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -392,9 +388,28 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
             
             {/* Content Preview */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Email Content</h3>
-              <div className="border rounded-md p-4 bg-white">
-                {formattedContent}
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Email Content Preview</h3>
+              <div className="border rounded-md bg-white shadow-sm">
+                <div className="border-b bg-gray-50 px-4 py-2 text-xs text-gray-600">
+                  <div className="flex items-center justify-between">
+                    <span>To: {"{recipient_email}"}</span>
+                    <span>From: {campaign.from_name ? `${campaign.from_name} <${campaign.from_email}>` : campaign.from_email}</span>
+                  </div>
+                  <div className="mt-1">
+                    Subject: {campaign.subject}
+                  </div>
+                </div>
+                <div className="p-6 overflow-auto max-h-[600px]">
+                  <div 
+                    className="email-content"
+                    dangerouslySetInnerHTML={{ __html: campaign.content }}
+                    style={{
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      color: '#333',
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </Card>
