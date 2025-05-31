@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('campaigns/{campaign}/pause', [App\Http\Controllers\CampaignController::class, 'pause'])->name('campaigns.pause');
     Route::post('campaigns/{campaign}/resume', [App\Http\Controllers\CampaignController::class, 'resume'])->name('campaigns.resume');
     Route::post('campaigns/{campaign}/stop', [App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
+    Route::put('campaigns/{campaign}/contacts/{campaignContact}/status', [App\Http\Controllers\CampaignController::class, 'updateContactStatus'])->name('campaigns.contacts.update-status');
 });
 
 // Email webhook for handling provider events (e.g. Resend.com)

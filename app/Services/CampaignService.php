@@ -291,6 +291,7 @@ class CampaignService
             'failed' => 0,
             'cancelled' => 0,
             'unsubscribed' => 0,
+            'demo_scheduled' => 0,
         ];
 
         // Merge with actual counts
@@ -298,11 +299,11 @@ class CampaignService
 
         // Calculate total and rates
         $total = array_sum($statuses);
-        
+
         // Delivered count includes all emails that were successfully delivered
         // (delivered, opened, clicked, responded all imply successful delivery)
         $deliveredCount = $statuses['delivered'] + $statuses['opened'] + $statuses['clicked'] + $statuses['responded'];
-        
+
         $deliveryRate = $total > 0 ? round(($deliveredCount / $total) * 100, 2) : 0;
         $openRate = $deliveredCount > 0 ? round(($statuses['opened'] / $deliveredCount) * 100, 2) : 0;
         $clickRate = $deliveredCount > 0 ? round(($statuses['clicked'] / $deliveredCount) * 100, 2) : 0;

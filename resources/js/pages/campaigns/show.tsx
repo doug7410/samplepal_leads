@@ -13,6 +13,7 @@ import {
   Clock,
   Edit,
   Mail,
+  MoreHorizontal,
   Pause,
   Play,
   Send,
@@ -34,6 +35,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -79,6 +86,7 @@ const contactStatusColors = {
   clicked: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
   bounced: { bg: 'bg-red-100', text: 'text-red-800' },
   failed: { bg: 'bg-orange-100', text: 'text-orange-800' },
+  demo_scheduled: { bg: 'bg-purple-100', text: 'text-purple-800' },
 };
 
 export default function CampaignShow({ campaign, statistics }: CampaignShowProps) {
@@ -470,7 +478,7 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                         <div className={`w-3 h-3 rounded-full ${
                           contactStatusColors[status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
                         }`}></div>
-                        <span className="capitalize">{status}</span>
+                        <span className="capitalize">{status === 'demo_scheduled' ? 'Demo Scheduled' : status}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{count}</span>
@@ -499,6 +507,7 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Sent</th>
                   <th className="px-4 py-3">Clicked</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -540,12 +549,36 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              router.put(route('campaigns.contacts.update-status', {
+                                campaign: campaign.id,
+                                campaignContact: cc.id
+                              }), {
+                                status: 'demo_scheduled'
+                              });
+                            }}
+                          >
+                            Mark as Demo Scheduled
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
                   </tr>
                 ))}
                 
                 {campaign.campaign_contacts.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-neutral-500">
+                    <td colSpan={7} className="px-4 py-6 text-center text-neutral-500">
                       No recipients added to this campaign yet
                     </td>
                   </tr>

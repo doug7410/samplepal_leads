@@ -33,6 +33,8 @@ class CampaignContact extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    public const STATUS_DEMO_SCHEDULED = 'demo_scheduled';
+
     /**
      * The attributes that are mass assignable.
      *

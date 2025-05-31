@@ -91,7 +91,7 @@ export interface CampaignContact {
     id: number;
     campaign_id: number;
     contact_id: number;
-    status: 'pending' | 'processing' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'responded' | 'bounced' | 'failed';
+    status: 'pending' | 'processing' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'responded' | 'bounced' | 'failed' | 'demo_scheduled';
     message_id: string | null;
     sent_at: string | null;
     delivered_at: string | null;

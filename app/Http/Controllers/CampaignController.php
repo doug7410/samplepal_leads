@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateCampaignContactStatusRequest;
 use App\Models\Campaign;
+use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\CampaignCommandService;
 use App\Services\CampaignService;
@@ -457,5 +459,18 @@ class CampaignController extends Controller
         return redirect()->route('campaigns.show', $campaign)
             ->with($success ? 'success' : 'error',
                 $success ? 'Campaign is being sent.' : 'Failed to send campaign.');
+    }
+
+    /**
+     * Update the status of a campaign contact.
+     */
+    public function updateContactStatus(UpdateCampaignContactStatusRequest $request, Campaign $campaign, CampaignContact $campaignContact): RedirectResponse
+    {
+        $campaignContact->update([
+            'status' => $request->validated()['status'],
+        ]);
+
+        return redirect()->route('campaigns.show', $campaign)
+            ->with('success', 'Contact status updated successfully.');
     }
 }
