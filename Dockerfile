@@ -1,6 +1,5 @@
 # Multi-stage build for Laravel application with React (Inertia.js)
 # SamplePal Leads - Production Docker Image
-# Build arguments with defaults
 ARG BUILDTIME="unknown"
 ARG VERSION="latest"
 ARG REVISION="unknown"
@@ -10,37 +9,41 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install Node dependencies
 RUN npm ci
 
-# Copy frontend source files
 COPY resources ./resources
 COPY vite.config.ts ./
 COPY tsconfig.json ./
 COPY public ./public
 COPY components.json ./
 
-# Build frontend assets for production
 RUN npm run build
 
-# Stage 2: Use the Laravel base image
-FROM kiwitechlab/laravel-base:php82-laravel12
+# Stage 2: PHP application
+FROM php:8.4-fpm
 
-# Switch to root to install packages
-USER root
-
-# Install additional system dependencies needed for this app
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
-    nodejs \
-    npm \
     curl \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql pdo_mysql zip gd bcmath opcache pcntl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
@@ -54,7 +57,6 @@ COPY . .
 
 # Copy built assets from frontend stage
 COPY --from=frontend-builder /app/public/build ./public/build
-COPY --from=frontend-builder /app/public/build/manifest.json ./public/build/
 
 # Finish composer installation
 RUN composer dump-autoload --optimize --no-dev
@@ -67,7 +69,7 @@ RUN mkdir -p storage/framework/{cache,sessions,views} \
     database \
     public/storage
 
-# Generate application key and cache config (will be overridden if ENV is set)
+# Create storage link
 RUN php artisan storage:link || true
 
 # Set permissions
@@ -78,19 +80,17 @@ RUN chown -R www-data:www-data /var/www/html \
 # Copy Docker configuration files
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default \
-    && rm -f /etc/nginx/sites-enabled/default.conf
+    && rm -f /etc/nginx/sites-enabled/default.conf 2>/dev/null || true
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-custom.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Redeclare build arguments for metadata labels
+# Metadata labels
 ARG BUILDTIME="unknown"
 ARG VERSION="latest"
 ARG REVISION="unknown"
-
-# Add metadata labels
 LABEL org.opencontainers.image.title="SamplePal Leads"
 LABEL org.opencontainers.image.description="Laravel application for SamplePal leads management"
 LABEL org.opencontainers.image.vendor="SamplePal"
@@ -99,15 +99,10 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.revision="${REVISION}"
 LABEL org.opencontainers.image.source="https://github.com/doug7410/samplepal_leads"
 
-# Expose port 80 for web traffic
 EXPOSE 80
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/health || exit 1
 
-# Set entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-# Start supervisord
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
