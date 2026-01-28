@@ -119,4 +119,18 @@ class ContactController extends Controller
         return redirect()->route('contacts.index')
             ->with('success', 'Contact updated successfully.');
     }
+
+    /**
+     * Remove the specified contact from storage.
+     */
+    public function destroy($id)
+    {
+        $contact = Contact::findOrFail($id);
+        $companyId = $contact->company_id;
+
+        $contact->delete();
+
+        return redirect()->route('contacts.index', ['company_id' => $companyId])
+            ->with('success', 'Contact deleted successfully.');
+    }
 }

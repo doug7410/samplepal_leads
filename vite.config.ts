@@ -30,13 +30,14 @@ export default defineConfig({
         },
     },
     server: {
+        host: true,
         cors: {
             origin: '*',
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization']
         },
         hmr: {
-            host: 'samplepal_leads.test'
+            host: 'samplepal-leads.test'
         },
     },
 });

@@ -123,27 +123,20 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate based on campaign type
     if (data.type === 'contact') {
-      // Set contact IDs based on filtered contacts
       const contactIds = filteredContacts.map(c => c.id);
-      setData('contact_ids', contactIds);
-      
+
       if (contactIds.length === 0) {
         alert('You need to select at least one contact for this campaign');
         return;
       }
-      
-      // Submit the form
-      put(route('campaigns.update', { campaign: campaign.id }), {
-        data: {
-          ...data,
-          contact_ids: contactIds,
-        },
-        onSuccess: () => {
-          // Redirect happens automatically with flash message
-        },
+
+      // Use router.put directly with the correct data
+      router.put(route('campaigns.update', { campaign: campaign.id }), {
+        ...data,
+        contact_ids: contactIds,
       });
     } else {
       // For company campaigns
@@ -151,13 +144,8 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
         alert('You need to select at least one company for this campaign');
         return;
       }
-      
-      // Submit the form
-      put(route('campaigns.update', { campaign: campaign.id }), {
-        onSuccess: () => {
-          // Redirect happens automatically with flash message
-        },
-      });
+
+      router.put(route('campaigns.update', { campaign: campaign.id }), data);
     }
   };
   
@@ -647,94 +635,82 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                 
                 <div className="border-t pt-4 flex justify-between">
                   <Button
-                    type="submit"
+                    type="button"
                     onClick={(e) => {
                       e.preventDefault();
-                      
-                      // Validate based on campaign type
+
                       if (data.type === 'contact') {
-                        if (filteredContacts.length === 0) {
+                        const contactIds = filteredContacts.map(c => c.id);
+                        if (contactIds.length === 0) {
                           alert('You need to select at least one contact for this campaign');
                           return;
                         }
-                        
-                        setData('contact_ids', filteredContacts.map(c => c.id));
-                        
-                        // Submit the form
-                        put(route('campaigns.update', { campaign: campaign.id }), {
-                          data: {
-                            ...data,
-                            contact_ids: filteredContacts.map(c => c.id),
-                          },
+
+                        router.put(route('campaigns.update', { campaign: campaign.id }), {
+                          ...data,
+                          contact_ids: contactIds,
+                        }, {
                           onSuccess: () => {
-                            // Redirect to the campaign show page
-                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                            router.visit(route('campaigns.show', { campaign: campaign.id }));
                           },
                         });
                       } else {
-                        // For company campaigns
                         if (data.company_ids.length === 0) {
                           alert('You need to select at least one company for this campaign');
                           return;
                         }
-                        
-                        put(route('campaigns.update', { campaign: campaign.id }), {
+
+                        router.put(route('campaigns.update', { campaign: campaign.id }), data, {
                           onSuccess: () => {
-                            // Redirect to the campaign show page
-                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                            router.visit(route('campaigns.show', { campaign: campaign.id }));
                           },
                         });
                       }
                     }}
-                    disabled={processing || 
-                      (data.type === 'contact' && filteredContacts.length === 0) || 
+                    disabled={processing ||
+                      (data.type === 'contact' && filteredContacts.length === 0) ||
                       (data.type === 'company' && data.company_ids.length === 0)}
                     variant="outline"
                     size="sm"
                   >
                     Save and View Campaign
                   </Button>
-                  
+
                   <Button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
-                      
-                      // First validate based on campaign type
+
                       if (data.type === 'contact') {
-                        if (filteredContacts.length === 0) {
+                        const contactIds = filteredContacts.map(c => c.id);
+                        if (contactIds.length === 0) {
                           alert('You need to select at least one contact for this campaign');
                           return;
                         }
-                        
-                        setData('contact_ids', filteredContacts.map(c => c.id));
-                        
-                        // Then save form and redirect
-                        put(route('campaigns.update', { campaign: campaign.id }), {
-                          data: {
-                            ...data,
-                            contact_ids: filteredContacts.map(c => c.id),
-                          },
+
+                        router.put(route('campaigns.update', { campaign: campaign.id }), {
+                          ...data,
+                          contact_ids: contactIds,
+                        }, {
                           onSuccess: () => {
-                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                            router.visit(route('campaigns.show', { campaign: campaign.id }));
                           },
                         });
                       } else {
-                        // For company campaigns
                         if (data.company_ids.length === 0) {
                           alert('You need to select at least one company for this campaign');
                           return;
                         }
-                        
-                        put(route('campaigns.update', { campaign: campaign.id }), {
+
+                        router.put(route('campaigns.update', { campaign: campaign.id }), data, {
                           onSuccess: () => {
-                            window.location.href = route('campaigns.show', { campaign: campaign.id });
+                            router.visit(route('campaigns.show', { campaign: campaign.id }));
                           },
                         });
                       }
                     }}
-                    disabled={processing || 
-                      (data.type === 'contact' && filteredContacts.length === 0) || 
+                    disabled={processing ||
+                      (data.type === 'contact' && filteredContacts.length === 0) ||
                       (data.type === 'company' && data.company_ids.length === 0)}
                     variant="secondary"
                     size="sm"

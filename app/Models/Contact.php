@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -90,5 +91,13 @@ class Contact extends Model
     public function campaignContacts(): HasMany
     {
         return $this->hasMany(CampaignContact::class);
+    }
+
+    /**
+     * Get the sequence contacts records for this contact.
+     */
+    public function sequenceContacts(): HasMany
+    {
+        return $this->hasMany(SequenceContact::class);
     }
 }

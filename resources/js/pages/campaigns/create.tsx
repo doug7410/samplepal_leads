@@ -60,7 +60,7 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
     filter_criteria: {
       company_id: null as number | null,
       relevance_min: null as number | null,
-      deal_status: [] as string[],
+      deal_status: ['none', 'contacted', 'responded', 'in_progress', 'closed_lost'] as string[],
     },
     contact_ids: [] as number[],
     company_ids: [] as number[],
@@ -70,14 +70,15 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
 
   // State for filtered contacts based on filter criteria
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>(contacts || []);
-  
+  // Track excluded contacts count
+  const [excludedCount, setExcludedCount] = useState({ customers: 0, unsubscribed: 0 });
+
   // Apply filters when filter criteria changes
   useEffect(() => {
     if (!contacts) return;
-    
-    console.log('Filtering contacts with criteria:', data.filter_criteria);
+
     let result = [...contacts];
-    
+
     // Apply company filter - make sure we're comparing numbers to numbers
     if (data.filter_criteria.company_id) {
       const companyId = parseInt(data.filter_criteria.company_id.toString());
@@ -86,7 +87,7 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
         return matches;
       });
     }
-    
+
     // Apply relevance score filter
     if (data.filter_criteria.relevance_min) {
       const minScore = parseInt(data.filter_criteria.relevance_min.toString());
@@ -96,7 +97,7 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
         return matches;
       });
     }
-    
+
     // Apply deal status filter
     if (data.filter_criteria.deal_status && data.filter_criteria.deal_status.length > 0) {
       result = result.filter(contact => {
@@ -104,12 +105,21 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
         return matches;
       });
     }
-    
+
     // Only include contacts with email
     const withEmail = result.filter(contact => Boolean(contact.email));
-    
-    console.log(`Filtered from ${contacts.length} to ${result.length} contacts, ${withEmail.length} with emails`);
-    setFilteredContacts(withEmail);
+
+    // Count excluded contacts (customers and unsubscribed)
+    const customers = withEmail.filter(c => c.deal_status === 'closed_won').length;
+    const unsubscribed = withEmail.filter(c => c.has_unsubscribed).length;
+    setExcludedCount({ customers, unsubscribed });
+
+    // Auto-exclude customers (closed_won) and unsubscribed contacts
+    const eligible = withEmail.filter(contact =>
+      contact.deal_status !== 'closed_won' && !contact.has_unsubscribed
+    );
+
+    setFilteredContacts(eligible);
   }, [data.filter_criteria, contacts]);
   
   const handleSubmit = (e: React.FormEvent, asDraft = true) => {
@@ -474,11 +484,18 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
                       <span className="font-semibold">{filteredContacts.length}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {filteredContacts.length === 0 
+                      {filteredContacts.length === 0
                         ? "No contacts match your current filters. Adjust the filters to include recipients."
                         : `${filteredContacts.length} contacts will receive this campaign.`
                       }
                     </div>
+                    {(excludedCount.customers > 0 || excludedCount.unsubscribed > 0) && (
+                      <div className="text-xs text-amber-600 mt-2">
+                        {excludedCount.customers + excludedCount.unsubscribed} contacts excluded
+                        {excludedCount.customers > 0 && ` (${excludedCount.customers} customers)`}
+                        {excludedCount.unsubscribed > 0 && ` (${excludedCount.unsubscribed} unsubscribed)`}
+                      </div>
+                    )}
                     
                     {/* Show contact names */}
                     <div className="mt-3 text-xs">

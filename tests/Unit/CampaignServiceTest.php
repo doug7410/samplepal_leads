@@ -131,9 +131,9 @@ it('can add contacts to a campaign based on filter criteria', function () {
 
 it('can add specific contacts to a campaign', function () {
     $campaign = Campaign::factory()->create();
-    $contact1 = Contact::factory()->create();
-    $contact2 = Contact::factory()->create();
-    $contact3 = Contact::factory()->create();
+    $contact1 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact2 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact3 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
 
     $contactIds = [$contact1->id, $contact3->id];
 
@@ -162,9 +162,9 @@ it('can add specific contacts to a campaign', function () {
 
 it('can remove contacts from a campaign', function () {
     $campaign = Campaign::factory()->create();
-    $contact1 = Contact::factory()->create();
-    $contact2 = Contact::factory()->create();
-    $contact3 = Contact::factory()->create();
+    $contact1 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact2 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact3 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
 
     // Add all contacts
     $this->campaignService->addContacts($campaign, [$contact1->id, $contact2->id, $contact3->id]);

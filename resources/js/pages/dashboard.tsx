@@ -1,9 +1,9 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Building2, Users } from 'lucide-react';
+import { Building2, Users, Mail, TrendingUp, UserPlus, Clock, Target } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -12,11 +12,159 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+interface DashboardProps {
+    stats: {
+        activeCampaigns: number;
+        totalCampaigns: number;
+        openRate: number;
+        totalSent: number;
+    };
+    pipeline: Record<string, number>;
+    needsFollowUp: number;
+    availableLeads: number;
+}
+
+const dealStatusLabels: Record<string, string> = {
+    none: 'New Leads',
+    contacted: 'Contacted',
+    responded: 'Responded',
+    in_progress: 'In Progress',
+    closed_won: 'Customers',
+    closed_lost: 'Lost',
+};
+
+const dealStatusColors: Record<string, string> = {
+    none: 'bg-gray-100 text-gray-700',
+    contacted: 'bg-blue-100 text-blue-700',
+    responded: 'bg-purple-100 text-purple-700',
+    in_progress: 'bg-yellow-100 text-yellow-700',
+    closed_won: 'bg-green-100 text-green-700',
+    closed_lost: 'bg-red-100 text-red-700',
+};
+
+export default function Dashboard({ stats, pipeline, needsFollowUp, availableLeads }: DashboardProps) {
+    const totalContacts = Object.values(pipeline).reduce((a, b) => a + b, 0);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                {/* Quick Stats Row */}
+                <div className="grid auto-rows-min gap-4 md:grid-cols-4">
+                    <Card className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-blue-100 p-2">
+                                <Mail size={20} className="text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-neutral-500">Active Campaigns</p>
+                                <p className="text-2xl font-semibold">{stats.activeCampaigns}</p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-green-100 p-2">
+                                <TrendingUp size={20} className="text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-neutral-500">Open Rate (30d)</p>
+                                <p className="text-2xl font-semibold">{stats.openRate}%</p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-purple-100 p-2">
+                                <Target size={20} className="text-purple-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-neutral-500">Available Leads</p>
+                                <p className="text-2xl font-semibold">{availableLeads}</p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-amber-100 p-2">
+                                <Clock size={20} className="text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-neutral-500">Need Follow-up</p>
+                                <p className="text-2xl font-semibold">{needsFollowUp}</p>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Main Content Row */}
+                <div className="grid gap-4 md:grid-cols-3">
+                    {/* Quick Actions */}
+                    <Card className="p-5">
+                        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+                        <div className="space-y-3">
+                            <Button variant="outline" className="w-full justify-start" asChild>
+                                <Link href={route('campaigns.create')}>
+                                    <Mail size={16} className="mr-2" />
+                                    Create Campaign
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start" asChild>
+                                <Link href={route('contacts.index')}>
+                                    <Users size={16} className="mr-2" />
+                                    View Contacts
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start" asChild>
+                                <Link href={route('companies.index')}>
+                                    <Building2 size={16} className="mr-2" />
+                                    View Companies
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start" asChild>
+                                <Link href={route('campaigns.index')}>
+                                    <TrendingUp size={16} className="mr-2" />
+                                    View Campaigns
+                                </Link>
+                            </Button>
+                        </div>
+                    </Card>
+
+                    {/* Pipeline Breakdown */}
+                    <Card className="p-5 md:col-span-2">
+                        <h2 className="text-lg font-semibold mb-4">Contact Pipeline</h2>
+                        <div className="space-y-3">
+                            {Object.entries(dealStatusLabels).map(([status, label]) => {
+                                const count = pipeline[status] || 0;
+                                const percentage = totalContacts > 0 ? (count / totalContacts) * 100 : 0;
+                                return (
+                                    <div key={status}>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${dealStatusColors[status]}`}>
+                                                {label}
+                                            </span>
+                                            <span className="text-neutral-600">{count}</span>
+                                        </div>
+                                        <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full ${status === 'closed_won' ? 'bg-green-500' : status === 'closed_lost' ? 'bg-red-400' : 'bg-blue-500'}`}
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-4 pt-4 border-t text-sm text-neutral-500">
+                            Total: {totalContacts} contacts
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Navigation Cards */}
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <Link href={route('companies.index')}>
                         <Card className="flex aspect-video items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800">
@@ -36,12 +184,15 @@ export default function Dashboard() {
                             </div>
                         </Card>
                     </Link>
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                </div>
-                <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border md:min-h-min">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+                    <Link href={route('campaigns.index')}>
+                        <Card className="flex aspect-video items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                            <div className="text-center">
+                                <Mail size={32} className="mx-auto mb-2" />
+                                <h2 className="text-xl font-semibold">Campaigns</h2>
+                                <p className="text-neutral-500">View all campaigns</p>
+                            </div>
+                        </Card>
+                    </Link>
                 </div>
             </div>
         </AppLayout>

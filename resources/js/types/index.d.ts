@@ -57,6 +57,7 @@ export interface Contact {
     office_phone: string | null;
     job_title: string | null;
     has_been_contacted: boolean;
+    has_unsubscribed: boolean;
     deal_status: 'none' | 'contacted' | 'responded' | 'in_progress' | 'closed_won' | 'closed_lost';
     notes: string | null;
     relevance_score: number | null;
@@ -117,4 +118,63 @@ export interface EmailEvent {
     user_agent: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface Sequence {
+    id: number;
+    name: string;
+    description: string | null;
+    user_id: number;
+    status: 'draft' | 'active' | 'paused';
+    entry_filter: any | null;
+    created_at: string;
+    updated_at: string;
+    steps?: SequenceStep[];
+    sequence_contacts?: SequenceContact[];
+    stats?: SequenceStats;
+}
+
+export interface SequenceStep {
+    id: number;
+    sequence_id: number;
+    step_order: number;
+    name: string;
+    subject: string;
+    content: string;
+    delay_days: number;
+    send_time: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SequenceContact {
+    id: number;
+    sequence_id: number;
+    contact_id: number;
+    current_step: number;
+    status: 'active' | 'completed' | 'exited';
+    next_send_at: string | null;
+    entered_at: string | null;
+    exited_at: string | null;
+    exit_reason: string | null;
+    created_at: string;
+    updated_at: string;
+    contact?: Contact;
+}
+
+export interface SequenceStats {
+    total_enrolled: number;
+    active: number;
+    completed: number;
+    exited: number;
+    exit_reasons: Record<string, number>;
+    step_stats: Record<number, {
+        name: string;
+        sent: number;
+        delivered: number;
+        opened: number;
+        clicked: number;
+        bounced: number;
+        failed: number;
+    }>;
 }

@@ -10,9 +10,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
 
@@ -22,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('contacts', [ContactController::class, 'store'])->name('contacts.store');
     Route::get('contacts/{id}/edit', [ContactController::class, 'edit'])->name('contacts.edit');
     Route::put('contacts/{id}', [ContactController::class, 'update'])->name('contacts.update');
+    Route::delete('contacts/{id}', [ContactController::class, 'destroy'])->name('contacts.destroy');
     Route::post('contacts/{id}/toggle-contacted', [ContactController::class, 'toggleContacted'])->name('contacts.toggle-contacted');
 
     // Campaign routes
@@ -36,6 +35,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('campaigns/{campaign}/resume', [App\Http\Controllers\CampaignController::class, 'resume'])->name('campaigns.resume');
     Route::post('campaigns/{campaign}/stop', [App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
     Route::put('campaigns/{campaign}/contacts/{campaignContact}/status', [App\Http\Controllers\CampaignController::class, 'updateContactStatus'])->name('campaigns.contacts.update-status');
+
+    // Sequence routes
+    Route::resource('sequences', App\Http\Controllers\SequenceController::class);
+    Route::post('sequences/{sequence}/activate', [App\Http\Controllers\SequenceController::class, 'activate'])->name('sequences.activate');
+    Route::post('sequences/{sequence}/pause', [App\Http\Controllers\SequenceController::class, 'pause'])->name('sequences.pause');
+    Route::post('sequences/{sequence}/contacts', [App\Http\Controllers\SequenceController::class, 'addContacts'])->name('sequences.add-contacts');
+    Route::delete('sequences/{sequence}/contacts/{contact}', [App\Http\Controllers\SequenceController::class, 'removeContact'])->name('sequences.remove-contact');
 });
 
 // Email webhook for handling provider events (e.g. Resend.com)

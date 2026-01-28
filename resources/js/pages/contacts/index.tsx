@@ -5,16 +5,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Building2, 
-  Edit, 
-  FilterIcon, 
-  Mail, 
-  MessageCircle, 
-  CheckCircle, 
+import {
+  Building2,
+  Edit,
+  FilterIcon,
+  Mail,
+  MessageCircle,
+  CheckCircle,
   XCircle,
-  UserPlus, 
-  X 
+  UserPlus,
+  X,
+  Trash2
 } from 'lucide-react';
 import { 
   Select,
@@ -95,6 +96,14 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
       replace: true
     });
   };
+
+  // Handle contact deletion
+  const handleDelete = (contact: Contact) => {
+    if (confirm(`Are you sure you want to delete ${contact.first_name} ${contact.last_name}? This action cannot be undone.`)) {
+      router.delete(route('contacts.destroy', { id: contact.id }));
+    }
+  };
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={companyName ? `${companyName} Contacts` : "Contacts"} />
@@ -283,12 +292,22 @@ export default function ContactsIndex({ contacts, companies, filters }: Contacts
                       })()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <Link href={route('contacts.edit', { id: contact.id })}>
-                        <Button size="sm" variant="ghost" className="flex items-center gap-1">
-                          <Edit size={16} />
-                          <span>Edit</span>
+                      <div className="flex items-center gap-1">
+                        <Link href={route('contacts.edit', { id: contact.id })}>
+                          <Button size="sm" variant="ghost" className="flex items-center gap-1">
+                            <Edit size={16} />
+                            <span>Edit</span>
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(contact)}
+                        >
+                          <Trash2 size={16} />
                         </Button>
-                      </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

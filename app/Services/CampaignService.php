@@ -69,7 +69,10 @@ class CampaignService
             }
 
             // Make sure contacts have emails and aren't already in this campaign
+            // Also exclude unsubscribed contacts and customers (closed_won)
             $query->whereNotNull('email')
+                ->where('has_unsubscribed', false)
+                ->where('deal_status', '!=', 'closed_won')
                 ->whereNotIn('id', function ($subquery) use ($campaign) {
                     $subquery->select('contact_id')
                         ->from('campaign_contacts')
@@ -107,8 +110,11 @@ class CampaignService
     {
         return DB::transaction(function () use ($campaign, $contactIds) {
             // Find contacts not already in the campaign
+            // Also exclude unsubscribed contacts and customers (closed_won)
             $contacts = Contact::whereIn('id', $contactIds)
                 ->whereNotNull('email')
+                ->where('has_unsubscribed', false)
+                ->where('deal_status', '!=', 'closed_won')
                 ->whereNotIn('id', function ($query) use ($campaign) {
                     $query->select('contact_id')
                         ->from('campaign_contacts')
@@ -225,8 +231,11 @@ class CampaignService
 
             foreach ($companies as $company) {
                 // Get all contacts for this company that have valid emails
+                // Also exclude unsubscribed contacts and customers (closed_won)
                 $contacts = $company->contacts()
                     ->whereNotNull('email')
+                    ->where('has_unsubscribed', false)
+                    ->where('deal_status', '!=', 'closed_won')
                     ->whereNotIn('id', function ($query) use ($campaign) {
                         $query->select('contact_id')
                             ->from('campaign_contacts')
