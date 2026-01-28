@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Laravel
+/vendor
+.env
+.env.*
+!.env.example
+storage/*.key
+storage/app/public/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# IDE
+.idea
+.vscode
+.claude
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.phpunit.result.cache
+phpunit.xml
+.phpunit.cache
+coverage
+
+# Build artifacts (will be built in Docker)
+public/build
+public/hot
+public/storage
+public/mix-manifest.json
+
+# Database
+database/*.sqlite
+database/*.sqlite-journal
+samplepal_leads
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+.editorconfig
+.styleci.yml
