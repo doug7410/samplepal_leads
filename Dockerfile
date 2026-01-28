@@ -1,4 +1,5 @@
 # Multi-stage build for Laravel application with React (Inertia.js)
+# SamplePal Leads - Production Docker Image
 # Build arguments with defaults
 ARG BUILDTIME="unknown"
 ARG VERSION="latest"
