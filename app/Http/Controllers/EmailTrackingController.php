@@ -42,7 +42,7 @@ class EmailTrackingController extends Controller
 
             if (config('app.env') === 'production') {
                 // In production, we strictly verify signatures
-                if (! $signature || ! $this->verifyResendSignature($payload, $signature, $webhookSecret)) {
+                if (! $signature || ! $this->verifyResendSignature($request, $signature, $webhookSecret)) {
                     Log::warning('Invalid webhook signature in production', [
                         'signature' => $signature,
                         'svix_id' => $request->header('Svix-Id'),
@@ -53,7 +53,7 @@ class EmailTrackingController extends Controller
                 }
             } else {
                 // In development, log but don't block on invalid signatures
-                $isValid = $this->verifyResendSignature($payload, $signature, $webhookSecret);
+                $isValid = $this->verifyResendSignature($request, $signature, $webhookSecret);
                 Log::info('Signature verification result: '.($isValid ? 'valid' : 'invalid'));
             }
         }
@@ -138,7 +138,7 @@ class EmailTrackingController extends Controller
      *
      * @see https://docs.svix.com/receiving/verifying-payloads/how-to-verify
      */
-    protected function verifyResendSignature(array $payload, ?string $signatureHeader = null, string $secret = ''): bool
+    protected function verifyResendSignature(Request $request, ?string $signatureHeader = null, string $secret = ''): bool
     {
         try {
             // Make sure we have all required inputs
@@ -149,11 +149,11 @@ class EmailTrackingController extends Controller
             }
 
             // Get the raw body content - we need the exact string that was signed
-            $bodyContent = request()->getContent();
+            $bodyContent = $request->getContent();
 
             // Get message ID and timestamp
-            $messageId = request()->header('Svix-Id');
-            $timestamp = request()->header('Svix-Timestamp');
+            $messageId = $request->header('Svix-Id');
+            $timestamp = $request->header('Svix-Timestamp');
 
             if (! $messageId || ! $timestamp || ! $signatureHeader) {
                 Log::error('Missing required Svix headers');
@@ -169,25 +169,35 @@ class EmailTrackingController extends Controller
                 return false;
             }
 
-            // Parse signature header (format: "v1,signature")
-            if (! preg_match('/^v1,(.+)$/', $signatureHeader, $matches)) {
-                Log::error('Invalid signature format');
-
-                return false;
+            // Decode the Svix secret (strip "whsec_" prefix and base64-decode)
+            $secretBytes = $secret;
+            if (str_starts_with($secret, 'whsec_')) {
+                $secretBytes = base64_decode(substr($secret, 6));
             }
-
-            $signature = $matches[1];
 
             // Construct the signed payload string exactly as Svix does
             $toSign = $messageId.'.'.$timestamp.'.'.$bodyContent;
 
-            // Calculate our signature using HMAC SHA-256 algorithm
+            // Calculate our expected signature using HMAC SHA-256
             $expectedSignature = base64_encode(
-                hash_hmac('sha256', $toSign, $secret, true)
+                hash_hmac('sha256', $toSign, $secretBytes, true)
             );
 
-            // Verify using constant-time comparison to prevent timing attacks
-            return hash_equals($expectedSignature, $signature);
+            // Svix-Signature header can contain multiple signatures (space-separated "v1,sig" pairs)
+            $signatures = explode(' ', $signatureHeader);
+            foreach ($signatures as $versionedSignature) {
+                if (! preg_match('/^v1,(.+)$/', $versionedSignature, $matches)) {
+                    continue;
+                }
+
+                if (hash_equals($expectedSignature, $matches[1])) {
+                    return true;
+                }
+            }
+
+            Log::error('No matching signature found');
+
+            return false;
         } catch (\Exception $e) {
             Log::error('Error verifying Resend signature: '.$e->getMessage());
 
