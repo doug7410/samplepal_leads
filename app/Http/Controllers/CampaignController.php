@@ -113,7 +113,7 @@ class CampaignController extends Controller
      */
     public function show(Campaign $campaign): Response
     {
-        $campaign->load(['campaignContacts.contact.company', 'companies']);
+        $campaign->load(['campaignContacts' => fn ($q) => $q->whereHas('contact'), 'campaignContacts.contact.company', 'companies']);
 
         $statistics = $this->campaignService->getStatistics($campaign);
 
