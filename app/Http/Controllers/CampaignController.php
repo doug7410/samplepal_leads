@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
 use App\Services\CampaignCommandService;
+use App\Services\CampaignSegmentService;
 use App\Services\CampaignService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,13 +20,16 @@ class CampaignController extends Controller
 
     protected CampaignCommandService $commandService;
 
-    /**
-     * Constructor
-     */
-    public function __construct(CampaignService $campaignService, CampaignCommandService $commandService)
-    {
+    protected CampaignSegmentService $segmentService;
+
+    public function __construct(
+        CampaignService $campaignService,
+        CampaignCommandService $commandService,
+        CampaignSegmentService $segmentService
+    ) {
         $this->campaignService = $campaignService;
         $this->commandService = $commandService;
+        $this->segmentService = $segmentService;
     }
 
     /**
@@ -113,13 +117,21 @@ class CampaignController extends Controller
      */
     public function show(Campaign $campaign): Response
     {
-        $campaign->load(['campaignContacts' => fn ($q) => $q->whereHas('contact'), 'campaignContacts.contact.company', 'companies']);
+        $campaign->load(['campaignContacts' => fn ($q) => $q->whereHas('contact'), 'campaignContacts.contact.company', 'segments', 'companies']);
 
         $statistics = $this->campaignService->getStatistics($campaign);
+
+        $segmentStatistics = [];
+        if ($campaign->segments->isNotEmpty()) {
+            foreach ($campaign->segments as $segment) {
+                $segmentStatistics[$segment->id] = $this->segmentService->getSegmentStatistics($segment);
+            }
+        }
 
         return Inertia::render('campaigns/show', [
             'campaign' => $campaign,
             'statistics' => $statistics,
+            'segmentStatistics' => $segmentStatistics,
         ]);
     }
 
@@ -287,12 +299,6 @@ class CampaignController extends Controller
      */
     public function removeContacts(Request $request, Campaign $campaign): RedirectResponse
     {
-        // Only allow removing contacts from draft campaigns
-        if ($campaign->status !== Campaign::STATUS_DRAFT) {
-            return redirect()->route('campaigns.show', $campaign)
-                ->with('error', 'Only draft campaigns can be modified.');
-        }
-
         if ($campaign->type !== Campaign::TYPE_CONTACT) {
             return redirect()->route('campaigns.show', $campaign)
                 ->with('error', 'Contacts can only be removed from contact-type campaigns.');

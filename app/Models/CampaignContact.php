@@ -43,6 +43,7 @@ class CampaignContact extends Model
     protected $fillable = [
         'campaign_id',
         'contact_id',
+        'campaign_segment_id',
         'status',
         'message_id',
         'sent_at',
@@ -84,5 +85,13 @@ class CampaignContact extends Model
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * Get the segment associated with this record.
+     */
+    public function segment(): BelongsTo
+    {
+        return $this->belongsTo(CampaignSegment::class, 'campaign_segment_id');
     }
 }

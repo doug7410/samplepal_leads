@@ -109,6 +109,19 @@ class Campaign extends Model
     }
 
     /**
+     * Get the segments for this campaign.
+     */
+    public function segments(): HasMany
+    {
+        return $this->hasMany(CampaignSegment::class)->orderBy('position');
+    }
+
+    public function hasSegments(): bool
+    {
+        return $this->segments()->exists();
+    }
+
+    /**
      * Get the companies associated with this campaign.
      */
     public function companies(): BelongsToMany

@@ -101,16 +101,6 @@ class InProgressCampaignState extends AbstractCampaignState
     }
 
     /**
-     * No contacts can be removed from in-progress campaigns
-     */
-    public function removeContacts(Campaign $campaign, array $contactIds): int
-    {
-        Log::info('Cannot remove contacts from in-progress campaign');
-
-        return 0;
-    }
-
-    /**
      * Check if the campaign can be processed by job processor.
      * Only in_progress campaigns can be processed.
      */

@@ -44,9 +44,12 @@ abstract class AbstractMailService implements MailServiceInterface
                 return null;
             }
 
-            // 2. Process subject and email content
-            $subject = $this->parseTemplate($campaign->subject, $contact);
-            $htmlBody = $this->contentProcessor->process($campaign->content, $campaign, $contact);
+            // 2. Process subject and email content (use segment overrides if available)
+            $segment = $campaignContact->segment;
+            $subjectTemplate = ($segment?->subject) ?? $campaign->subject;
+            $contentTemplate = ($segment?->content) ?? $campaign->content;
+            $subject = $this->parseTemplate($subjectTemplate, $contact);
+            $htmlBody = $this->contentProcessor->process($contentTemplate, $campaign, $contact);
 
             // 3. Perform the actual email delivery (implemented by concrete classes)
             $messageId = $this->deliverEmail($campaign, $contact, $subject, $htmlBody, $options);

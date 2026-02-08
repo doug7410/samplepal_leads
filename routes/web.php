@@ -36,6 +36,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('campaigns/{campaign}/stop', [App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
     Route::put('campaigns/{campaign}/contacts/{campaignContact}/status', [App\Http\Controllers\CampaignController::class, 'updateContactStatus'])->name('campaigns.contacts.update-status');
 
+    // Campaign segment routes
+    Route::post('campaigns/{campaign}/segments', [App\Http\Controllers\CampaignSegmentController::class, 'store'])->name('campaigns.segments.store');
+    Route::put('campaigns/{campaign}/segments/{segment}', [App\Http\Controllers\CampaignSegmentController::class, 'update'])->name('campaigns.segments.update');
+    Route::delete('campaigns/{campaign}/segments', [App\Http\Controllers\CampaignSegmentController::class, 'destroy'])->name('campaigns.segments.destroy');
+    Route::post('campaigns/{campaign}/segments/{segment}/send', [App\Http\Controllers\CampaignSegmentController::class, 'send'])->name('campaigns.segments.send');
+
     // Sequence routes
     Route::resource('sequences', App\Http\Controllers\SequenceController::class);
     Route::post('sequences/{sequence}/activate', [App\Http\Controllers\SequenceController::class, 'activate'])->name('sequences.activate');

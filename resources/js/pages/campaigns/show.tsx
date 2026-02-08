@@ -1,26 +1,38 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type Campaign, type CampaignContact } from '@/types';
+import { type BreadcrumbItem, type Campaign, type CampaignContact, type CampaignSegment, type SegmentStatistics } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Building, Calendar, ChevronLeft, Edit, MoreHorizontal, Pause, Play, Send, User, Users, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    Building,
+    Calendar,
+    ChevronLeft,
+    Edit,
+    MoreHorizontal,
+    Pause,
+    Play,
+    Scissors,
+    Send,
+    Trash2,
+    User,
+    Users,
+    XCircle,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface CampaignStatistics {
     total: number;
-    statuses: {
-        pending: number;
-        sent: number;
-        delivered: number;
-        clicked: number;
-        bounced: number;
-        failed: number;
-    };
+    statuses: Record<string, number>;
     rates: {
         delivery: number;
         click: number;
@@ -32,9 +44,9 @@ interface CampaignShowProps {
         campaign_contacts: CampaignContact[];
     };
     statistics: CampaignStatistics;
+    segmentStatistics?: Record<number, SegmentStatistics>;
 }
 
-// Status badge mapping for campaign status
 const statusBadge: Record<string, { label: string; color: string }> = {
     draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
     scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-800' },
@@ -44,8 +56,7 @@ const statusBadge: Record<string, { label: string; color: string }> = {
     failed: { label: 'Failed', color: 'bg-orange-100 text-orange-800' },
 };
 
-// Status colors for the contact statuses
-const contactStatusColors = {
+const contactStatusColors: Record<string, { bg: string; text: string }> = {
     pending: { bg: 'bg-gray-100', text: 'text-gray-800' },
     processing: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
     sent: { bg: 'bg-blue-100', text: 'text-blue-800' },
@@ -56,34 +67,157 @@ const contactStatusColors = {
     demo_scheduled: { bg: 'bg-purple-100', text: 'text-purple-800' },
 };
 
-export default function CampaignShow({ campaign, statistics }: CampaignShowProps) {
+export default function CampaignShow({ campaign, statistics, segmentStatistics }: CampaignShowProps) {
     const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+    const [segmentDialogOpen, setSegmentDialogOpen] = useState(false);
+    const [numberOfSegments, setNumberOfSegments] = useState(2);
+    const [editSegment, setEditSegment] = useState<CampaignSegment | null>(null);
+    const [editSegmentData, setEditSegmentData] = useState({ name: '', subject: '', content: '' });
     const [scheduledDate, setScheduledDate] = useState<string>(() => {
-        // Default to one hour from now
         const date = new Date();
         date.setHours(date.getHours() + 1);
-        return date.toISOString().slice(0, 16); // Format for datetime-local input
+        return date.toISOString().slice(0, 16);
     });
+
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+    const hasSegments = campaign.segments && campaign.segments.length > 0;
+    const allSegmentsDraft = hasSegments && campaign.segments!.every((s) => s.status === 'draft');
+    const segmentsSentCount = hasSegments ? campaign.segments!.filter((s) => s.status === 'completed' || s.status === 'failed').length : 0;
+
     const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Dashboard',
-            href: '/dashboard',
-        },
-        {
-            title: 'Campaigns',
-            href: '/campaigns',
-        },
-        {
-            title: campaign.name,
-            href: route('campaigns.show', { campaign: campaign.id }),
-        },
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Campaigns', href: '/campaigns' },
+        { title: campaign.name, href: route('campaigns.show', { campaign: campaign.id }) },
     ];
+
+    function openEditSegment(segment: CampaignSegment) {
+        setEditSegment(segment);
+        setEditSegmentData({
+            name: segment.name,
+            subject: segment.subject || '',
+            content: segment.content || '',
+        });
+    }
+
+    function saveSegment() {
+        if (!editSegment) return;
+        router.put(
+            route('campaigns.segments.update', { campaign: campaign.id, segment: editSegment.id }),
+            {
+                name: editSegmentData.name,
+                subject: editSegmentData.subject || null,
+                content: editSegmentData.content || null,
+            },
+            { onSuccess: () => setEditSegment(null) },
+        );
+    }
+
+    function getSegmentName(segmentId: number | null): string {
+        if (!segmentId || !campaign.segments) return '-';
+        const seg = campaign.segments.find((s) => s.id === segmentId);
+        return seg?.name || '-';
+    }
+
+    function toggleSort(key: string) {
+        if (sortKey === key) {
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+    }
+
+    function SortIcon({ columnKey }: { columnKey: string }) {
+        if (sortKey !== columnKey) return <ArrowUpDown size={14} className="text-neutral-300" />;
+        return sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
+    }
+
+    const sortedContacts = useMemo(() => {
+        const filtered = campaign.campaign_contacts.filter((cc) => cc.contact);
+        if (!sortKey) return filtered;
+
+        return [...filtered].sort((a, b) => {
+            let aVal: string | number | null = null;
+            let bVal: string | number | null = null;
+
+            switch (sortKey) {
+                case 'name':
+                    aVal = `${a.contact.first_name} ${a.contact.last_name}`.toLowerCase();
+                    bVal = `${b.contact.first_name} ${b.contact.last_name}`.toLowerCase();
+                    break;
+                case 'email':
+                    aVal = (a.contact.email || '').toLowerCase();
+                    bVal = (b.contact.email || '').toLowerCase();
+                    break;
+                case 'company':
+                    aVal = (a.contact.company?.company_name || '').toLowerCase();
+                    bVal = (b.contact.company?.company_name || '').toLowerCase();
+                    break;
+                case 'job_title':
+                    aVal = (a.contact.job_title || '').toLowerCase();
+                    bVal = (b.contact.job_title || '').toLowerCase();
+                    break;
+                case 'category':
+                    aVal = (a.contact.job_title_category || '').toLowerCase();
+                    bVal = (b.contact.job_title_category || '').toLowerCase();
+                    break;
+                case 'segment':
+                    aVal = getSegmentName(a.campaign_segment_id).toLowerCase();
+                    bVal = getSegmentName(b.campaign_segment_id).toLowerCase();
+                    break;
+                case 'status':
+                    aVal = a.status;
+                    bVal = b.status;
+                    break;
+                case 'sent':
+                    aVal = a.sent_at || '';
+                    bVal = b.sent_at || '';
+                    break;
+                case 'clicked':
+                    aVal = a.clicked_at || '';
+                    bVal = b.clicked_at || '';
+                    break;
+            }
+
+            if (aVal === null || bVal === null) return 0;
+            if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [campaign.campaign_contacts, sortKey, sortDir]);
+
+    const pendingContactIds = useMemo(() => sortedContacts.filter((cc) => cc.status === 'pending').map((cc) => cc.contact_id), [sortedContacts]);
+
+    const allPendingSelected = pendingContactIds.length > 0 && pendingContactIds.every((id) => selectedIds.includes(id));
+
+    function toggleSelectAll() {
+        if (allPendingSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(pendingContactIds);
+        }
+    }
+
+    function toggleSelect(contactId: number) {
+        setSelectedIds((prev) => (prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]));
+    }
+
+    function removeContacts(contactIds: number[]) {
+        router.post(
+            route('campaigns.remove-contacts', { campaign: campaign.id }),
+            { contact_ids: contactIds },
+            { onSuccess: () => setSelectedIds((prev) => prev.filter((id) => !contactIds.includes(id))) },
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Campaign: ${campaign.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                {/* Header with back button and actions */}
+                {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" asChild className="mr-2">
@@ -93,14 +227,18 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                             </Link>
                         </Button>
                         <h1 className="text-2xl font-bold">{campaign.name}</h1>
-                        <Badge className={statusBadge[campaign.status as keyof typeof statusBadge]?.color || 'bg-gray-100 text-gray-800'}>
-                            {statusBadge[campaign.status as keyof typeof statusBadge]?.label || campaign.status}
+                        <Badge className={statusBadge[campaign.status]?.color || 'bg-gray-100 text-gray-800'}>
+                            {statusBadge[campaign.status]?.label || campaign.status}
                         </Badge>
+                        {hasSegments && (
+                            <span className="text-sm text-gray-500">
+                                ({segmentsSentCount} of {campaign.segments!.length} segments sent)
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex gap-2">
-                        {/* Campaign Controls based on status */}
-                        {campaign.status === 'draft' && (
+                        {campaign.status === 'draft' && !hasSegments && (
                             <>
                                 <Button size="sm" variant="outline" asChild>
                                     <Link href={route('campaigns.edit', { campaign: campaign.id })} className="flex items-center gap-1">
@@ -119,15 +257,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                                     ? statistics.total === 0
                                                     : !campaign.companies || campaign.companies.length === 0
                                             }
-                                            title={
-                                                campaign.type === 'contact'
-                                                    ? statistics.total === 0
-                                                        ? 'Add contacts before scheduling'
-                                                        : ''
-                                                    : !campaign.companies || campaign.companies.length === 0
-                                                      ? 'Add companies before scheduling'
-                                                      : ''
-                                            }
                                         >
                                             <Calendar size={14} />
                                             <span>Schedule</span>
@@ -140,7 +269,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                                 Choose when to send this campaign. The campaign will be sent automatically at the specified time.
                                             </DialogDescription>
                                         </DialogHeader>
-
                                         <div className="py-4">
                                             <Label htmlFor="scheduled-time">Schedule Date & Time</Label>
                                             <Input
@@ -152,7 +280,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                                 className="mt-1"
                                             />
                                         </div>
-
                                         <DialogFooter>
                                             <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
                                                 Cancel
@@ -177,20 +304,20 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                     disabled={
                                         campaign.type === 'contact' ? statistics.total === 0 : !campaign.companies || campaign.companies.length === 0
                                     }
-                                    title={
-                                        campaign.type === 'contact'
-                                            ? statistics.total === 0
-                                                ? 'Add contacts before sending'
-                                                : ''
-                                            : !campaign.companies || campaign.companies.length === 0
-                                              ? 'Add companies before sending'
-                                              : ''
-                                    }
                                 >
                                     <Send size={14} />
                                     <span>Send Now</span>
                                 </Button>
                             </>
+                        )}
+
+                        {campaign.status === 'draft' && hasSegments && (
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={route('campaigns.edit', { campaign: campaign.id })} className="flex items-center gap-1">
+                                    <Edit size={14} />
+                                    <span>Edit</span>
+                                </Link>
+                            </Button>
                         )}
 
                         {campaign.status === 'scheduled' && (
@@ -303,14 +430,12 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                     </div>
                 </div>
 
-                {/* Campaign details and statistics in a grid layout */}
+                {/* Campaign details and statistics */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {/* Campaign Details */}
                     <Card className="p-5 md:col-span-2">
                         <h2 className="mb-4 text-lg font-semibold">Campaign Details</h2>
 
                         <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-                            {/* Campaign Type */}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Campaign Type</h3>
                                 <p className="flex items-center gap-1 text-base">
@@ -327,42 +452,30 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                     )}
                                 </p>
                             </div>
-
-                            {/* Subject Line */}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Subject Line</h3>
                                 <p className="text-base">{campaign.subject}</p>
                             </div>
-
-                            {/* From */}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">From</h3>
                                 <p className="text-base">
                                     {campaign.from_name ? `${campaign.from_name} <${campaign.from_email}>` : campaign.from_email}
                                 </p>
                             </div>
-
-                            {/* Reply-To */}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Reply-To</h3>
                                 <p className="text-base">{campaign.reply_to || campaign.from_email}</p>
                             </div>
-
-                            {/* Created At */}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Created</h3>
                                 <p className="text-base">{new Date(campaign.created_at).toLocaleString()}</p>
                             </div>
-
-                            {/* Scheduled At - only if scheduled */}
                             {campaign.scheduled_at && (
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Scheduled For</h3>
                                     <p className="text-base">{new Date(campaign.scheduled_at).toLocaleString()}</p>
                                 </div>
                             )}
-
-                            {/* Completed At - only if completed */}
                             {campaign.completed_at && (
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Completed</h3>
@@ -371,7 +484,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                             )}
                         </div>
 
-                        {/* Description */}
                         {campaign.description && (
                             <div className="mb-6">
                                 <h3 className="mb-2 text-sm font-medium text-gray-500">Description</h3>
@@ -379,7 +491,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                             </div>
                         )}
 
-                        {/* Content Preview */}
                         <div>
                             <h3 className="mb-2 text-sm font-medium text-gray-500">Email Content Preview</h3>
                             <div className="rounded-md border bg-white shadow-sm">
@@ -396,27 +507,21 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                     <div
                                         className="email-content"
                                         dangerouslySetInnerHTML={{ __html: campaign.content }}
-                                        style={{
-                                            fontSize: '14px',
-                                            lineHeight: '1.6',
-                                            color: '#333',
-                                        }}
+                                        style={{ fontSize: '14px', lineHeight: '1.6', color: '#333' }}
                                     />
                                 </div>
                             </div>
                         </div>
                     </Card>
 
-                    {/* Campaign Statistics */}
                     <Card className="p-5 md:col-span-1">
                         <h2 className="mb-4 text-lg font-semibold">Campaign Statistics</h2>
 
-                        {/* Overall Progress */}
                         <div className="mb-6">
                             <h3 className="mb-2 text-sm font-medium text-gray-500">Recipients</h3>
                             <div className="flex items-center gap-2">
                                 <Users size={20} className="text-gray-500" />
-                                {campaign.type === 'company' && statistics.total === 0 && campaign.companies?.length > 0 ? (
+                                {campaign.type === 'company' && statistics.total === 0 && campaign.companies && campaign.companies.length > 0 ? (
                                     <div>
                                         <span className="text-xl font-semibold">0</span>
                                         <div className="mt-1 text-xs text-amber-600">Recipients will be processed when you send the campaign</div>
@@ -430,18 +535,13 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                             </div>
                         </div>
 
-                        {/* Rates */}
                         <div className="mb-6 space-y-2">
                             <h3 className="text-sm font-medium text-gray-500">Performance</h3>
-
                             <div className="grid grid-cols-2 gap-2">
-                                {/* Delivery Rate */}
                                 <div className="rounded-md border bg-white p-3">
                                     <div className="mb-1 text-xs text-gray-500">Delivery Rate</div>
                                     <div className="text-lg font-semibold">{statistics.rates.delivery}%</div>
                                 </div>
-
-                                {/* Click Rate */}
                                 <div className="rounded-md border bg-white p-3">
                                     <div className="mb-1 text-xs text-gray-500">Click Rate</div>
                                     <div className="text-lg font-semibold">{statistics.rates.click}%</div>
@@ -449,7 +549,6 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                             </div>
                         </div>
 
-                        {/* Status Breakdown */}
                         <div>
                             <h3 className="mb-2 text-sm font-medium text-gray-500">Status Breakdown</h3>
                             <div className="space-y-2">
@@ -458,11 +557,7 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                                     .map(([status, count]) => (
                                         <div key={status} className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <div
-                                                    className={`h-3 w-3 rounded-full ${
-                                                        contactStatusColors[status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
-                                                    }`}
-                                                ></div>
+                                                <div className={`h-3 w-3 rounded-full ${contactStatusColors[status]?.bg || 'bg-gray-100'}`}></div>
                                                 <span className="capitalize">{status === 'demo_scheduled' ? 'Demo Scheduled' : status}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -478,92 +573,376 @@ export default function CampaignShow({ campaign, statistics }: CampaignShowProps
                     </Card>
                 </div>
 
-                {/* Contact List */}
+                {/* Segments Section */}
+                {campaign.type === 'contact' && (
+                    <Card className="p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Segments</h2>
+                            <div className="flex gap-2">
+                                {campaign.status === 'draft' && !hasSegments && statistics.total > 0 && (
+                                    <Dialog open={segmentDialogOpen} onOpenChange={setSegmentDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button size="sm" variant="outline" className="flex items-center gap-1">
+                                                <Scissors size={14} />
+                                                <span>Split into Segments</span>
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Split into Segments</DialogTitle>
+                                                <DialogDescription>
+                                                    Split {statistics.total} contacts into segments. Each segment can be sent independently with
+                                                    optional email modifications.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="py-4">
+                                                <Label htmlFor="num-segments">Number of Segments</Label>
+                                                <Input
+                                                    id="num-segments"
+                                                    type="number"
+                                                    min={2}
+                                                    max={20}
+                                                    value={numberOfSegments}
+                                                    onChange={(e) => setNumberOfSegments(parseInt(e.target.value) || 2)}
+                                                    className="mt-1"
+                                                />
+                                                <p className="mt-2 text-sm text-gray-500">
+                                                    ~{Math.ceil(statistics.total / numberOfSegments)} contacts per segment
+                                                </p>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button variant="outline" onClick={() => setSegmentDialogOpen(false)}>
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        router.post(route('campaigns.segments.store', { campaign: campaign.id }), {
+                                                            number_of_segments: numberOfSegments,
+                                                        });
+                                                        setSegmentDialogOpen(false);
+                                                    }}
+                                                >
+                                                    Create Segments
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+
+                                {hasSegments && allSegmentsDraft && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            if (confirm('Remove all segments? Contacts will remain in the campaign.')) {
+                                                router.delete(route('campaigns.segments.destroy', { campaign: campaign.id }));
+                                            }
+                                        }}
+                                        className="flex items-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
+                                    >
+                                        <Trash2 size={14} />
+                                        <span>Remove Segments</span>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {!hasSegments && (
+                            <p className="text-sm text-gray-500">
+                                No segments created. Split the campaign into segments to send to groups of contacts one at a time.
+                            </p>
+                        )}
+
+                        {hasSegments && (
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                {campaign.segments!.map((segment) => {
+                                    const segStats = segmentStatistics?.[segment.id];
+                                    const hasOverride = segment.subject !== null || segment.content !== null;
+                                    return (
+                                        <div key={segment.id} className="rounded-lg border p-4">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium">{segment.name}</span>
+                                                    <Badge className={statusBadge[segment.status]?.color || 'bg-gray-100 text-gray-800'}>
+                                                        {statusBadge[segment.status]?.label || segment.status}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-3 space-y-1 text-sm text-gray-600">
+                                                <div className="flex justify-between">
+                                                    <span>Recipients</span>
+                                                    <span className="font-medium">{segStats?.total ?? 0}</span>
+                                                </div>
+                                                {segment.status !== 'draft' && segStats && (
+                                                    <>
+                                                        <div className="flex justify-between">
+                                                            <span>Delivery</span>
+                                                            <span className="font-medium">{segStats.rates.delivery}%</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>Clicks</span>
+                                                            <span className="font-medium">{segStats.rates.click}%</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <div className="mb-3 text-xs text-gray-500">
+                                                {hasOverride ? (
+                                                    <span className="text-blue-600">Custom subject/content</span>
+                                                ) : (
+                                                    <span>Using campaign defaults</span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                {segment.status === 'draft' && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => openEditSegment(segment)}>
+                                                            <Edit size={12} />
+                                                            <span className="ml-1">Edit</span>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                router.post(
+                                                                    route('campaigns.segments.send', {
+                                                                        campaign: campaign.id,
+                                                                        segment: segment.id,
+                                                                    }),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Send size={12} />
+                                                            <span className="ml-1">Send</span>
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {segment.status === 'in_progress' && <span className="text-sm text-yellow-600">Sending...</span>}
+                                                {segment.sent_at && (
+                                                    <span className="text-xs text-gray-400">
+                                                        Sent {new Date(segment.sent_at).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </Card>
+                )}
+
+                {/* Segment Edit Dialog */}
+                <Dialog open={editSegment !== null} onOpenChange={(open) => !open && setEditSegment(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Edit {editSegment?.name}</DialogTitle>
+                            <DialogDescription>
+                                Customize the email for this segment. Leave fields empty to use the campaign defaults.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label htmlFor="segment-name">Segment Name</Label>
+                                <Input
+                                    id="segment-name"
+                                    value={editSegmentData.name}
+                                    onChange={(e) => setEditSegmentData({ ...editSegmentData, name: e.target.value })}
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="segment-subject">Subject Line Override</Label>
+                                <Input
+                                    id="segment-subject"
+                                    value={editSegmentData.subject}
+                                    onChange={(e) => setEditSegmentData({ ...editSegmentData, subject: e.target.value })}
+                                    placeholder={campaign.subject}
+                                    className="mt-1"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {editSegmentData.subject ? 'Custom subject' : `Using campaign default: "${campaign.subject}"`}
+                                </p>
+                            </div>
+                            <div>
+                                <Label htmlFor="segment-content">Content Override</Label>
+                                <Textarea
+                                    id="segment-content"
+                                    value={editSegmentData.content}
+                                    onChange={(e) => setEditSegmentData({ ...editSegmentData, content: e.target.value })}
+                                    placeholder="Leave empty to use campaign content"
+                                    rows={8}
+                                    className="mt-1"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {editSegmentData.content ? 'Custom content' : 'Using campaign default content'}
+                                </p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditSegment(null)}>
+                                Cancel
+                            </Button>
+                            {(editSegmentData.subject || editSegmentData.content) && (
+                                <Button variant="outline" onClick={() => setEditSegmentData({ ...editSegmentData, subject: '', content: '' })}>
+                                    Clear Overrides
+                                </Button>
+                            )}
+                            <Button onClick={saveSegment}>Save</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Recipients Table */}
                 <Card className="p-5">
-                    <h2 className="mb-4 text-lg font-semibold">Campaign Recipients</h2>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">Campaign Recipients</h2>
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-600">{selectedIds.length} selected</span>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (confirm(`Remove ${selectedIds.length} contact(s) from the campaign?`)) {
+                                            removeContacts(selectedIds);
+                                        }
+                                    }}
+                                    className="flex items-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
+                                >
+                                    <Trash2 size={14} />
+                                    <span>Remove Selected</span>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b bg-neutral-50 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
-                                    <th className="px-4 py-3">Name</th>
-                                    <th className="px-4 py-3">Email</th>
-                                    <th className="px-4 py-3">Company</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3">Sent</th>
-                                    <th className="px-4 py-3">Clicked</th>
+                                    <th className="px-4 py-3">
+                                        {pendingContactIds.length > 0 && (
+                                            <Checkbox
+                                                checked={allPendingSelected}
+                                                onCheckedChange={toggleSelectAll}
+                                                aria-label="Select all pending"
+                                            />
+                                        )}
+                                    </th>
+                                    {[
+                                        { key: 'name', label: 'Name' },
+                                        { key: 'email', label: 'Email' },
+                                        { key: 'company', label: 'Company' },
+                                        { key: 'job_title', label: 'Job Title' },
+                                        { key: 'category', label: 'Category' },
+                                        ...(hasSegments ? [{ key: 'segment', label: 'Segment' }] : []),
+                                        { key: 'status', label: 'Status' },
+                                        { key: 'sent', label: 'Sent' },
+                                        { key: 'clicked', label: 'Clicked' },
+                                    ].map((col) => (
+                                        <th
+                                            key={col.key}
+                                            className="cursor-pointer px-4 py-3 select-none hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            onClick={() => toggleSort(col.key)}
+                                        >
+                                            <span className="inline-flex items-center gap-1">
+                                                {col.label}
+                                                <SortIcon columnKey={col.key} />
+                                            </span>
+                                        </th>
+                                    ))}
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
-                                {campaign.campaign_contacts
-                                    .filter((cc) => cc.contact)
-                                    .map((cc) => (
-                                        <tr key={cc.id} className="hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                                            <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
-                                                {cc.contact.first_name} {cc.contact.last_name}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                                {cc.contact.email ? (
-                                                    <a
-                                                        href={`mailto:${cc.contact.email}`}
-                                                        className="text-blue-600 hover:underline dark:text-blue-400"
+                                {sortedContacts.map((cc) => (
+                                    <tr key={cc.id} className="hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            {cc.status === 'pending' && (
+                                                <Checkbox
+                                                    checked={selectedIds.includes(cc.contact_id)}
+                                                    onCheckedChange={() => toggleSelect(cc.contact_id)}
+                                                    aria-label={`Select ${cc.contact.first_name} ${cc.contact.last_name}`}
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                                            {cc.contact.first_name} {cc.contact.last_name}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            {cc.contact.email ? (
+                                                <a href={`mailto:${cc.contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
+                                                    {cc.contact.email}
+                                                </a>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.company?.company_name || '-'}</td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title || '-'}</td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title_category || '-'}</td>
+                                        {hasSegments && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{getSegmentName(cc.campaign_segment_id)}</td>
+                                        )}
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            <Badge
+                                                className={`${contactStatusColors[cc.status]?.bg || 'bg-gray-100'} ${contactStatusColors[cc.status]?.text || 'text-gray-800'}`}
+                                            >
+                                                {cc.status}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            {cc.sent_at ? new Date(cc.sent_at).toLocaleString() : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            router.put(
+                                                                route('campaigns.contacts.update-status', {
+                                                                    campaign: campaign.id,
+                                                                    campaignContact: cc.id,
+                                                                }),
+                                                                { status: 'demo_scheduled' },
+                                                            );
+                                                        }}
                                                     >
-                                                        {cc.contact.email}
-                                                    </a>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.company?.company_name || '-'}</td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                                <Badge
-                                                    className={`${
-                                                        contactStatusColors[cc.status as keyof typeof contactStatusColors]?.bg || 'bg-gray-100'
-                                                    } ${contactStatusColors[cc.status as keyof typeof contactStatusColors]?.text || 'text-gray-800'}`}
-                                                >
-                                                    {cc.status}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                                {cc.sent_at ? new Date(cc.sent_at).toLocaleString() : '-'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                                {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
+                                                        Mark as Demo Scheduled
+                                                    </DropdownMenuItem>
+                                                    {cc.status === 'pending' && (
                                                         <DropdownMenuItem
+                                                            className="text-red-600 focus:text-red-600"
                                                             onClick={() => {
-                                                                router.put(
-                                                                    route('campaigns.contacts.update-status', {
-                                                                        campaign: campaign.id,
-                                                                        campaignContact: cc.id,
-                                                                    }),
-                                                                    {
-                                                                        status: 'demo_scheduled',
-                                                                    },
-                                                                );
+                                                                if (confirm('Remove this contact from the campaign?')) {
+                                                                    removeContacts([cc.contact_id]);
+                                                                }
                                                             }}
                                                         >
-                                                            Mark as Demo Scheduled
+                                                            Remove from Campaign
                                                         </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </tr>
+                                ))}
 
                                 {campaign.campaign_contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-6 text-center text-neutral-500">
+                                        <td colSpan={hasSegments ? 11 : 10} className="px-4 py-6 text-center text-neutral-500">
                                             No recipients added to this campaign yet
                                         </td>
                                     </tr>

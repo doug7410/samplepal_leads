@@ -56,6 +56,7 @@ export interface Contact {
     cell_phone: string | null;
     office_phone: string | null;
     job_title: string | null;
+    job_title_category: 'Principal' | 'Sales' | 'Operations' | 'Project Manager' | 'Other' | null;
     has_been_contacted: boolean;
     has_unsubscribed: boolean;
     deal_status: 'none' | 'contacted' | 'responded' | 'in_progress' | 'closed_won' | 'closed_lost';
@@ -86,12 +87,37 @@ export interface Campaign {
     user: User;
     campaign_contacts?: CampaignContact[];
     companies?: Company[];
+    segments?: CampaignSegment[];
+}
+
+export interface CampaignSegment {
+    id: number;
+    campaign_id: number;
+    name: string;
+    position: number;
+    subject: string | null;
+    content: string | null;
+    status: 'draft' | 'in_progress' | 'completed' | 'failed';
+    sent_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SegmentStatistics {
+    total: number;
+    statuses: Record<string, number>;
+    rates: {
+        delivery: number;
+        click: number;
+    };
 }
 
 export interface CampaignContact {
     id: number;
     campaign_id: number;
     contact_id: number;
+    campaign_segment_id: number | null;
     status: 'pending' | 'processing' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'responded' | 'bounced' | 'failed' | 'demo_scheduled';
     message_id: string | null;
     sent_at: string | null;
@@ -168,13 +194,16 @@ export interface SequenceStats {
     completed: number;
     exited: number;
     exit_reasons: Record<string, number>;
-    step_stats: Record<number, {
-        name: string;
-        sent: number;
-        delivered: number;
-        opened: number;
-        clicked: number;
-        bounced: number;
-        failed: number;
-    }>;
+    step_stats: Record<
+        number,
+        {
+            name: string;
+            sent: number;
+            delivered: number;
+            opened: number;
+            clicked: number;
+            bounced: number;
+            failed: number;
+        }
+    >;
 }

@@ -3,6 +3,7 @@
 namespace App\Commands\Campaigns;
 
 use App\Models\CampaignContact;
+use App\Models\CampaignSegment;
 
 class StopCampaignCommand extends CampaignCommand
 {
@@ -48,6 +49,8 @@ class StopCampaignCommand extends CampaignCommand
                 $contact->save();
             }
 
+            $this->resetSegments();
+
             // Reset campaign status to draft
             $this->campaign->status = 'draft';
             $this->campaign->scheduled_at = null;
@@ -75,6 +78,8 @@ class StopCampaignCommand extends CampaignCommand
                 $contact->save();
             }
 
+            $this->resetSegments();
+
             // Reset campaign status to draft
             $this->campaign->status = 'draft';
             $this->campaign->scheduled_at = null;
@@ -86,5 +91,14 @@ class StopCampaignCommand extends CampaignCommand
 
         // Default behavior (should never reach here)
         return $this->campaign->stop();
+    }
+
+    protected function resetSegments(): void
+    {
+        $this->campaign->segments()->update([
+            'status' => CampaignSegment::STATUS_DRAFT,
+            'sent_at' => null,
+            'completed_at' => null,
+        ]);
     }
 }
