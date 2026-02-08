@@ -13,7 +13,6 @@ import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from './app-logo';
-import AppLogoIcon from './app-logo-icon';
 
 const mainNavItems: NavItem[] = [
     {
@@ -61,11 +60,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <SheetContent side="left" className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between">
                                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <div className="flex items-center justify-center overflow-visible h-6 w-6">
-                                        <img 
-                                            src="/logo_no_padding.svg" 
-                                            alt="Samplepal Leads Logo" 
-                                            className="h-5 w-5 object-contain" 
+                                    <div className="flex h-6 w-6 items-center justify-center overflow-visible">
+                                        <img
+                                            src="/logo_no_padding.svg"
+                                            alt="Samplepal Leads Logo"
+                                            className="h-5 w-5 object-contain"
                                             style={{ transform: 'scale(1.8)' }}
                                         />
                                     </div>

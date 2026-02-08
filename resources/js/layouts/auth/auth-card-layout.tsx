@@ -16,10 +16,10 @@ export default function AuthCardLayout({
             <div className="flex w-full max-w-md flex-col gap-6">
                 <Link href={route('home')} className="flex items-center gap-2 self-center font-medium">
                     <div className="flex h-9 w-9 items-center justify-center overflow-visible">
-                        <img 
-                            src="/logo_no_padding.svg" 
-                            alt="Samplepal Leads Logo" 
-                            className="h-8 w-8 object-contain" 
+                        <img
+                            src="/logo_no_padding.svg"
+                            alt="Samplepal Leads Logo"
+                            className="h-8 w-8 object-contain"
                             style={{ transform: 'scale(1.8)' }}
                         />
                     </div>

@@ -1,9 +1,9 @@
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Building2, Users, Mail, TrendingUp, UserPlus, Clock, Target } from 'lucide-react';
+import { Building2, Clock, Mail, Target, TrendingUp, Users } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -104,7 +104,7 @@ export default function Dashboard({ stats, pipeline, needsFollowUp, availableLea
                 <div className="grid gap-4 md:grid-cols-3">
                     {/* Quick Actions */}
                     <Card className="p-5">
-                        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+                        <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
                         <div className="space-y-3">
                             <Button variant="outline" className="w-full justify-start" asChild>
                                 <Link href={route('campaigns.create')}>
@@ -135,20 +135,18 @@ export default function Dashboard({ stats, pipeline, needsFollowUp, availableLea
 
                     {/* Pipeline Breakdown */}
                     <Card className="p-5 md:col-span-2">
-                        <h2 className="text-lg font-semibold mb-4">Contact Pipeline</h2>
+                        <h2 className="mb-4 text-lg font-semibold">Contact Pipeline</h2>
                         <div className="space-y-3">
                             {Object.entries(dealStatusLabels).map(([status, label]) => {
                                 const count = pipeline[status] || 0;
                                 const percentage = totalContacts > 0 ? (count / totalContacts) * 100 : 0;
                                 return (
                                     <div key={status}>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${dealStatusColors[status]}`}>
-                                                {label}
-                                            </span>
+                                        <div className="mb-1 flex justify-between text-sm">
+                                            <span className={`rounded px-2 py-0.5 text-xs font-medium ${dealStatusColors[status]}`}>{label}</span>
                                             <span className="text-neutral-600">{count}</span>
                                         </div>
-                                        <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                        <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
                                             <div
                                                 className={`h-full ${status === 'closed_won' ? 'bg-green-500' : status === 'closed_lost' ? 'bg-red-400' : 'bg-blue-500'}`}
                                                 style={{ width: `${percentage}%` }}
@@ -158,9 +156,7 @@ export default function Dashboard({ stats, pipeline, needsFollowUp, availableLea
                                 );
                             })}
                         </div>
-                        <div className="mt-4 pt-4 border-t text-sm text-neutral-500">
-                            Total: {totalContacts} contacts
-                        </div>
+                        <div className="mt-4 border-t pt-4 text-sm text-neutral-500">Total: {totalContacts} contacts</div>
                     </Card>
                 </div>
 

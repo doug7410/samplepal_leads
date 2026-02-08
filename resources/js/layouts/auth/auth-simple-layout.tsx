@@ -14,11 +14,11 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
                         <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md overflow-visible">
-                                <img 
-                                    src="/logo_no_padding.svg" 
-                                    alt="Samplepal Leads Logo" 
-                                    className="h-8 w-8 object-contain" 
+                            <div className="mb-1 flex h-9 w-9 items-center justify-center overflow-visible rounded-md">
+                                <img
+                                    src="/logo_no_padding.svg"
+                                    alt="Samplepal Leads Logo"
+                                    className="h-8 w-8 object-contain"
                                     style={{ transform: 'scale(1.8)' }}
                                 />
                             </div>

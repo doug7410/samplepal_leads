@@ -15,11 +15,11 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
             <div className="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
                 <div className="absolute inset-0 bg-zinc-900" />
                 <Link href={route('home')} className="relative z-20 flex items-center text-lg font-medium">
-                    <div className="flex items-center justify-center overflow-visible mr-2 h-8 w-8">
-                        <img 
-                            src="/logo_no_padding.svg" 
-                            alt="Samplepal Leads Logo" 
-                            className="h-7 w-7 object-contain" 
+                    <div className="mr-2 flex h-8 w-8 items-center justify-center overflow-visible">
+                        <img
+                            src="/logo_no_padding.svg"
+                            alt="Samplepal Leads Logo"
+                            className="h-7 w-7 object-contain"
                             style={{ transform: 'scale(1.8)' }}
                         />
                     </div>
@@ -37,11 +37,11 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
             <div className="w-full lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                     <Link href={route('home')} className="relative z-20 flex items-center justify-center lg:hidden">
-                        <div className="flex items-center justify-center overflow-visible h-10 sm:h-12">
-                            <img 
-                                src="/logo_no_padding.svg" 
-                                alt="Samplepal Leads Logo" 
-                                className="h-9 w-9 sm:h-10 sm:w-10 object-contain" 
+                        <div className="flex h-10 items-center justify-center overflow-visible sm:h-12">
+                            <img
+                                src="/logo_no_padding.svg"
+                                alt="Samplepal Leads Logo"
+                                className="h-9 w-9 object-contain sm:h-10 sm:w-10"
                                 style={{ transform: 'scale(1.8)' }}
                             />
                         </div>
