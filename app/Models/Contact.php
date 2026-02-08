@@ -26,6 +26,7 @@ class Contact extends Model
         'cell_phone',
         'office_phone',
         'job_title',
+        'job_title_category',
         'has_been_contacted',
         'has_unsubscribed',
         'unsubscribed_at',
