@@ -32,6 +32,16 @@ class ContactController extends Controller
             $query->where('job_title_category', $request->job_title_category);
         }
 
+        if ($request->filled('has_email')) {
+            if ($request->has_email === 'with') {
+                $query->whereNotNull('email')->where('email', '!=', '');
+            } elseif ($request->has_email === 'without') {
+                $query->where(function ($q) {
+                    $q->whereNull('email')->orWhere('email', '');
+                });
+            }
+        }
+
         $contacts = $query->get();
         $companies = Company::orderBy('company_name')->get(['id', 'company_name']);
         $jobTitles = Contact::whereNotNull('job_title')->where('job_title', '!=', '')->distinct()->orderBy('job_title')->pluck('job_title');
@@ -47,6 +57,7 @@ class ContactController extends Controller
                 'deal_status' => $request->deal_status,
                 'job_title' => $request->job_title,
                 'job_title_category' => $request->job_title_category,
+                'has_email' => $request->has_email,
             ],
         ]);
     }

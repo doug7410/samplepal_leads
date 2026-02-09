@@ -84,6 +84,36 @@ it('filters contacts by job category', function () {
     );
 });
 
+it('filters contacts with emails', function () {
+    $company = Company::factory()->create();
+    Contact::factory()->count(2)->create(['company_id' => $company->id, 'email' => 'test@example.com']);
+    Contact::factory()->create(['company_id' => $company->id, 'email' => null]);
+    Contact::factory()->create(['company_id' => $company->id, 'email' => '']);
+
+    $response = $this->actingAs($this->user)->get(route('contacts.index', ['has_email' => 'with']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page
+        ->component('contacts/index')
+        ->has('contacts', 2)
+    );
+});
+
+it('filters contacts without emails', function () {
+    $company = Company::factory()->create();
+    Contact::factory()->count(2)->create(['company_id' => $company->id, 'email' => 'test@example.com']);
+    Contact::factory()->create(['company_id' => $company->id, 'email' => null]);
+    Contact::factory()->create(['company_id' => $company->id, 'email' => '']);
+
+    $response = $this->actingAs($this->user)->get(route('contacts.index', ['has_email' => 'without']));
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page
+        ->component('contacts/index')
+        ->has('contacts', 2)
+    );
+});
+
 it('passes job titles and job categories to the frontend', function () {
     $company = Company::factory()->create();
     Contact::factory()->create(['company_id' => $company->id, 'job_title' => 'Quality Manager', 'job_title_category' => 'Quality']);
