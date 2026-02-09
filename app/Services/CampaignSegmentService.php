@@ -31,13 +31,23 @@ class CampaignSegmentService
                 ]));
             }
 
-            // Distribute contacts round-robin
-            $contacts = $campaign->campaignContacts()->orderBy('id')->get();
-            $contacts->each(function (CampaignContact $contact, int $index) use ($segments) {
-                $segmentIndex = $index % $segments->count();
-                $contact->campaign_segment_id = $segments[$segmentIndex]->id;
-                $contact->save();
-            });
+            // Group contacts by company, then distribute company groups across segments
+            // so all contacts from the same company stay in one segment
+            $contacts = $campaign->campaignContacts()->with('contact:id,company_id')->orderBy('id')->get();
+
+            $companyGroups = $contacts->groupBy(fn (CampaignContact $cc) => $cc->contact->company_id ?? 0)
+                ->sortByDesc->count()
+                ->values();
+
+            // Assign each company group to the segment with the fewest contacts (greedy balancing)
+            $segmentCounts = array_fill_keys($segments->pluck('id')->all(), 0);
+
+            foreach ($companyGroups as $group) {
+                $targetSegmentId = array_keys($segmentCounts, min($segmentCounts))[0];
+                CampaignContact::whereIn('id', $group->pluck('id'))
+                    ->update(['campaign_segment_id' => $targetSegmentId]);
+                $segmentCounts[$targetSegmentId] += $group->count();
+            }
 
             return $segments;
         });

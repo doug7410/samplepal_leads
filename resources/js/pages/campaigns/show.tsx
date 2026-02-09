@@ -18,6 +18,7 @@ import {
     Calendar,
     ChevronLeft,
     Edit,
+    Filter,
     MoreHorizontal,
     Pause,
     Play,
@@ -82,6 +83,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const [filterSegmentId, setFilterSegmentId] = useState<number | null>(null);
 
     const hasSegments = campaign.segments && campaign.segments.length > 0;
     const allSegmentsDraft = hasSegments && campaign.segments!.every((s) => s.status === 'draft');
@@ -136,7 +138,10 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
     }
 
     const sortedContacts = useMemo(() => {
-        const filtered = campaign.campaign_contacts.filter((cc) => cc.contact);
+        let filtered = campaign.campaign_contacts.filter((cc) => cc.contact);
+        if (filterSegmentId !== null) {
+            filtered = filtered.filter((cc) => cc.campaign_segment_id === filterSegmentId);
+        }
         if (!sortKey) return filtered;
 
         return [...filtered].sort((a, b) => {
@@ -155,6 +160,10 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                 case 'company':
                     aVal = (a.contact.company?.company_name || '').toLowerCase();
                     bVal = (b.contact.company?.company_name || '').toLowerCase();
+                    break;
+                case 'website':
+                    aVal = (a.contact.company?.website || '').toLowerCase();
+                    bVal = (b.contact.company?.website || '').toLowerCase();
                     break;
                 case 'job_title':
                     aVal = (a.contact.job_title || '').toLowerCase();
@@ -187,7 +196,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
             if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
             return 0;
         });
-    }, [campaign.campaign_contacts, sortKey, sortDir]);
+    }, [campaign.campaign_contacts, sortKey, sortDir, filterSegmentId]);
 
     const pendingContactIds = useMemo(() => sortedContacts.filter((cc) => cc.status === 'pending').map((cc) => cc.contact_id), [sortedContacts]);
 
@@ -697,6 +706,14 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                             </div>
 
                                             <div className="flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant={filterSegmentId === segment.id ? 'default' : 'outline'}
+                                                    onClick={() => setFilterSegmentId(filterSegmentId === segment.id ? null : segment.id)}
+                                                >
+                                                    <Filter size={12} />
+                                                    <span className="ml-1">{filterSegmentId === segment.id ? 'Filtered' : 'Filter'}</span>
+                                                </Button>
                                                 {segment.status === 'draft' && (
                                                     <>
                                                         <Button size="sm" variant="outline" onClick={() => openEditSegment(segment)}>
@@ -835,6 +852,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                     {[
                                         { key: 'name', label: 'Name' },
                                         { key: 'email', label: 'Email' },
+                                        { key: 'website', label: 'Website' },
                                         { key: 'company', label: 'Company' },
                                         { key: 'job_title', label: 'Job Title' },
                                         { key: 'category', label: 'Category' },
@@ -881,7 +899,25 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                 '-'
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.company?.company_name || '-'}</td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            {cc.contact.company?.website ? (
+                                                <a
+                                                    href={cc.contact.company.website.startsWith('http') ? cc.contact.company.website : `https://${cc.contact.company.website}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline dark:text-blue-400"
+                                                >
+                                                    {cc.contact.company.website.replace(/^https?:\/\//, '')}
+                                                </a>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                            <Link href={route('contacts.index', { company_id: cc.contact.company_id })} className="text-blue-600 hover:underline dark:text-blue-400">
+                                                {cc.contact.company?.company_name || '-'}
+                                            </Link>
+                                        </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title || '-'}</td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title_category || '-'}</td>
                                         {hasSegments && (
@@ -909,6 +945,11 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem
+                                                        onClick={() => router.visit(route('contacts.edit', { id: cc.contact.id }))}
+                                                    >
+                                                        Edit Contact
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => {
                                                             router.put(
@@ -942,7 +983,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
 
                                 {campaign.campaign_contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan={hasSegments ? 11 : 10} className="px-4 py-6 text-center text-neutral-500">
+                                        <td colSpan={hasSegments ? 12 : 11} className="px-4 py-6 text-center text-neutral-500">
                                             No recipients added to this campaign yet
                                         </td>
                                     </tr>

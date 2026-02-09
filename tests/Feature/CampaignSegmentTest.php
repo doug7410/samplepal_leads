@@ -12,18 +12,20 @@ use Illuminate\Support\Facades\Queue;
 
 // ── Controller: Store (Create Segments) ──────────────────────────
 
-it('creates segments and distributes contacts evenly', function () {
+it('creates segments and distributes contacts by company', function () {
     $user = User::factory()->create();
-    $company = Company::factory()->create();
     $campaign = Campaign::factory()->create(['user_id' => $user->id]);
 
-    $contacts = Contact::factory()->count(6)->create(['company_id' => $company->id]);
-    foreach ($contacts as $contact) {
-        CampaignContact::create([
-            'campaign_id' => $campaign->id,
-            'contact_id' => $contact->id,
-            'status' => CampaignContact::STATUS_PENDING,
-        ]);
+    $companies = Company::factory()->count(3)->create();
+    foreach ($companies as $company) {
+        $contacts = Contact::factory()->count(2)->create(['company_id' => $company->id]);
+        foreach ($contacts as $contact) {
+            CampaignContact::create([
+                'campaign_id' => $campaign->id,
+                'contact_id' => $contact->id,
+                'status' => CampaignContact::STATUS_PENDING,
+            ]);
+        }
     }
 
     $response = $this->actingAs($user)->post(route('campaigns.segments.store', $campaign), [
@@ -35,18 +37,61 @@ it('creates segments and distributes contacts evenly', function () {
 
     expect($campaign->segments()->count())->toBe(3);
 
-    // Each segment should have 2 contacts (6 / 3)
+    // Each segment should have 2 contacts (one company each)
     $campaign->segments->each(function ($segment) {
         expect($segment->campaignContacts()->count())->toBe(2);
     });
 });
 
-it('distributes contacts round-robin when not evenly divisible', function () {
+it('keeps all contacts from the same company in one segment', function () {
     $user = User::factory()->create();
-    $company = Company::factory()->create();
     $campaign = Campaign::factory()->create(['user_id' => $user->id]);
 
-    $contacts = Contact::factory()->count(5)->create(['company_id' => $company->id]);
+    $companyA = Company::factory()->create();
+    $companyB = Company::factory()->create();
+
+    $contactsA = Contact::factory()->count(3)->create(['company_id' => $companyA->id]);
+    $contactsB = Contact::factory()->count(2)->create(['company_id' => $companyB->id]);
+
+    foreach ($contactsA->merge($contactsB) as $contact) {
+        CampaignContact::create([
+            'campaign_id' => $campaign->id,
+            'contact_id' => $contact->id,
+            'status' => CampaignContact::STATUS_PENDING,
+        ]);
+    }
+
+    $this->actingAs($user)->post(route('campaigns.segments.store', $campaign), [
+        'number_of_segments' => 2,
+    ]);
+
+    $segments = $campaign->segments()->orderBy('position')->get();
+
+    // Each company's contacts must all be in the same segment
+    foreach ([$companyA, $companyB] as $company) {
+        $segmentIds = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('contact_id', Contact::where('company_id', $company->id)->pluck('id'))
+            ->pluck('campaign_segment_id')
+            ->unique();
+
+        expect($segmentIds)->toHaveCount(1);
+    }
+});
+
+it('balances segments when companies have uneven contact counts', function () {
+    $user = User::factory()->create();
+    $campaign = Campaign::factory()->create(['user_id' => $user->id]);
+
+    // Company A: 4 contacts, Company B: 1 contact, Company C: 1 contact
+    $companyA = Company::factory()->create();
+    $companyB = Company::factory()->create();
+    $companyC = Company::factory()->create();
+
+    $contacts = collect()
+        ->merge(Contact::factory()->count(4)->create(['company_id' => $companyA->id]))
+        ->merge(Contact::factory()->count(1)->create(['company_id' => $companyB->id]))
+        ->merge(Contact::factory()->count(1)->create(['company_id' => $companyC->id]));
+
     foreach ($contacts as $contact) {
         CampaignContact::create([
             'campaign_id' => $campaign->id,
@@ -56,14 +101,14 @@ it('distributes contacts round-robin when not evenly divisible', function () {
     }
 
     $this->actingAs($user)->post(route('campaigns.segments.store', $campaign), [
-        'number_of_segments' => 3,
+        'number_of_segments' => 2,
     ]);
 
     $segments = $campaign->segments()->orderBy('position')->get();
-    $counts = $segments->map(fn ($s) => $s->campaignContacts()->count());
+    $counts = $segments->map(fn ($s) => $s->campaignContacts()->count())->sort()->values();
 
-    // 5 contacts into 3 segments: 2, 2, 1
-    expect($counts->toArray())->toBe([2, 2, 1]);
+    // Company A (4) in one segment, Companies B+C (1+1) in the other
+    expect($counts->toArray())->toBe([2, 4]);
 });
 
 it('rejects creating segments for a non-draft campaign', function () {
