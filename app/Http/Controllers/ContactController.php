@@ -16,19 +16,37 @@ class ContactController extends Controller
     {
         $query = Contact::with('company');
 
-        // Filter by company_id if provided
-        if ($request->has('company_id')) {
+        if ($request->filled('company_id')) {
             $query->where('company_id', $request->company_id);
+        }
+
+        if ($request->filled('deal_status')) {
+            $query->where('deal_status', $request->deal_status);
+        }
+
+        if ($request->filled('job_title')) {
+            $query->where('job_title', $request->job_title);
+        }
+
+        if ($request->filled('job_title_category')) {
+            $query->where('job_title_category', $request->job_title_category);
         }
 
         $contacts = $query->get();
         $companies = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $jobTitles = Contact::whereNotNull('job_title')->where('job_title', '!=', '')->distinct()->orderBy('job_title')->pluck('job_title');
+        $jobCategories = Contact::whereNotNull('job_title_category')->where('job_title_category', '!=', '')->distinct()->orderBy('job_title_category')->pluck('job_title_category');
 
         return Inertia::render('contacts/index', [
             'contacts' => $contacts,
             'companies' => $companies,
+            'jobTitles' => $jobTitles,
+            'jobCategories' => $jobCategories,
             'filters' => [
                 'company_id' => $request->company_id,
+                'deal_status' => $request->deal_status,
+                'job_title' => $request->job_title,
+                'job_title_category' => $request->job_title_category,
             ],
         ]);
     }
