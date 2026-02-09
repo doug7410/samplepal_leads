@@ -473,7 +473,7 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title || '-'}</td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title_category || '-'}</td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            <Link href={route('companies.index')} className="text-blue-600 hover:underline dark:text-blue-400">
+                                            <Link href={route('contacts.index', { company_id: contact.company_id })} className="text-blue-600 hover:underline dark:text-blue-400">
                                                 {contact.company?.company_name || '-'}
                                             </Link>
                                         </td>

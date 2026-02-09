@@ -130,6 +130,48 @@ it('marks contacts at unreachable companies as unusable', function () {
     expect($usableContact->fresh()->is_enrichment_unusable)->toBeFalse();
 });
 
+it('nullifies placeholder email addresses', function () {
+    $company = Company::factory()->create();
+    $placeholder = Contact::factory()->create(['company_id' => $company->id, 'email' => 'info@example.com']);
+    $valid = Contact::factory()->create(['company_id' => $company->id, 'email' => 'john@acme.com']);
+
+    $this->artisan('app:enrich-contacts --clean-emails')
+        ->assertSuccessful();
+
+    expect($placeholder->fresh()->email)->toBeNull();
+    expect($valid->fresh()->email)->toBe('john@acme.com');
+});
+
+it('nullifies non-email strings', function () {
+    $company = Company::factory()->create();
+    $contact = Contact::factory()->create(['company_id' => $company->id, 'email' => 'not-an-email']);
+
+    $this->artisan('app:enrich-contacts --clean-emails')
+        ->assertSuccessful();
+
+    expect($contact->fresh()->email)->toBeNull();
+});
+
+it('does not nullify legitimate emails with domains containing invalid domain substrings', function () {
+    $company = Company::factory()->create();
+    $contact = Contact::factory()->create(['company_id' => $company->id, 'email' => 'rich@lightsourceindiana.com']);
+
+    $this->artisan('app:enrich-contacts --clean-emails')
+        ->assertSuccessful();
+
+    expect($contact->fresh()->email)->toBe('rich@lightsourceindiana.com');
+});
+
+it('cleans emails in dry run without saving', function () {
+    $company = Company::factory()->create();
+    $contact = Contact::factory()->create(['company_id' => $company->id, 'email' => 'info@example.com']);
+
+    $this->artisan('app:enrich-contacts --clean-emails --dry-run')
+        ->assertSuccessful();
+
+    expect($contact->fresh()->email)->toBe('info@example.com');
+});
+
 it('runs all tasks with --all flag', function () {
     JobCategoryClassifier::fake(function () {
         return [

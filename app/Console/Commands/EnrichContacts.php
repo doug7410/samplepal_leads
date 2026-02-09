@@ -22,6 +22,7 @@ class EnrichContacts extends Command
         {--guess-emails : Fill in missing emails using AI pattern analysis}
         {--validate-websites : Check if company websites are reachable}
         {--mark-unusable : Mark contacts at unreachable companies as unusable}
+        {--clean-emails : Nullify placeholder and invalid email addresses}
         {--all : Run all enrichment tasks}
         {--dry-run : Show what would change without saving}';
 
@@ -57,6 +58,11 @@ class EnrichContacts extends Command
 
         if ($runAll || $this->option('validate-websites')) {
             $this->validateWebsites($websiteValidator, $dryRun);
+            $ran = true;
+        }
+
+        if ($runAll || $this->option('clean-emails')) {
+            $this->cleanEmails($dryRun);
             $ran = true;
         }
 
@@ -224,6 +230,64 @@ class EnrichContacts extends Command
             'total_companies' => count($results),
             'status_counts' => $statusCounts->toArray(),
             'results' => $results,
+        ];
+    }
+
+    protected function cleanEmails(bool $dryRun): void
+    {
+        $this->info('Cleaning invalid email addresses...');
+
+        $invalidDomains = [
+            'example.com',
+            'test.com',
+            'noemail.com',
+            'none.com',
+            'placeholder.com',
+            'fake.com',
+            'invalid.com',
+            'email.com',
+        ];
+
+        $contacts = Contact::query()
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get(['id', 'first_name', 'last_name', 'email'])
+            ->filter(function ($contact) use ($invalidDomains) {
+                $email = strtolower($contact->email);
+
+                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return true;
+                }
+
+                $domain = explode('@', $email)[1] ?? '';
+
+                return in_array($domain, $invalidDomains);
+            });
+
+        if ($contacts->isEmpty()) {
+            $this->info('No invalid emails found.');
+
+            return;
+        }
+
+        $results = $contacts->map(fn ($c) => [
+            'id' => $c->id,
+            'name' => $c->first_name.' '.$c->last_name,
+            'email' => $c->email,
+        ])->values()->toArray();
+
+        if (! $dryRun) {
+            Contact::query()
+                ->whereIn('id', $contacts->pluck('id'))
+                ->update(['email' => null]);
+        }
+
+        $this->info(count($results).' invalid emails '.($dryRun ? 'would be' : '').' nullified:');
+        $this->table(['ID', 'Name', 'Old Email'], $results);
+
+        $this->dryRunLog['clean_emails'] = [
+            'count' => count($results),
+            'contacts' => $results,
         ];
     }
 
