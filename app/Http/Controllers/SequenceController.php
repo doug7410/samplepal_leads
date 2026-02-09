@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DealStatus;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Sequence;
@@ -47,7 +48,7 @@ class SequenceController extends Controller
         $contacts = Contact::with('company')
             ->whereNotNull('email')
             ->where('has_unsubscribed', false)
-            ->where('deal_status', '!=', 'closed_won')
+            ->where('deal_status', '!=', DealStatus::ClosedWon)
             ->get();
 
         return Inertia::render('sequences/create', [
@@ -106,7 +107,7 @@ class SequenceController extends Controller
         $contacts = Contact::with('company')
             ->whereNotNull('email')
             ->where('has_unsubscribed', false)
-            ->where('deal_status', '!=', 'closed_won')
+            ->where('deal_status', '!=', DealStatus::ClosedWon)
             ->get();
 
         return Inertia::render('sequences/edit', [

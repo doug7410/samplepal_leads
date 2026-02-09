@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DEAL_STATUSES } from '@/constants/deal-status';
 import WysiwygEditor from '@/components/wysiwyg-editor';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Company, type Contact } from '@/types';
@@ -45,7 +46,7 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
         filter_criteria: {
             company_id: null as number | null,
             relevance_min: null as number | null,
-            deal_status: ['none', 'contacted', 'responded', 'in_progress', 'closed_lost'] as string[],
+            exclude_deal_status: ['closed_won'] as string[],
             job_title: '' as string,
         },
         contact_ids: [] as number[],
@@ -57,7 +58,6 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
     // State for filtered contacts based on filter criteria
     const [filteredContacts, setFilteredContacts] = useState<Contact[]>(contacts || []);
     // Track excluded contacts count
-    const [excludedCount, setExcludedCount] = useState({ customers: 0, unsubscribed: 0 });
 
     // Unique job titles for autocomplete
     const jobTitles = [...new Set((contacts || []).map((c) => c.job_title).filter(Boolean) as string[])].sort();
@@ -87,12 +87,9 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
             });
         }
 
-        // Apply deal status filter
-        if (data.filter_criteria.deal_status && data.filter_criteria.deal_status.length > 0) {
-            result = result.filter((contact) => {
-                const matches = data.filter_criteria.deal_status.includes(contact.deal_status);
-                return matches;
-            });
+        // Apply deal status exclusion filter
+        if (data.filter_criteria.exclude_deal_status && data.filter_criteria.exclude_deal_status.length > 0) {
+            result = result.filter((contact) => !data.filter_criteria.exclude_deal_status.includes(contact.deal_status));
         }
 
         // Apply job title filter
@@ -101,16 +98,8 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
             result = result.filter((contact) => contact.job_title?.toLowerCase().includes(search));
         }
 
-        // Only include contacts with email
-        const withEmail = result.filter((contact) => Boolean(contact.email));
-
-        // Count excluded contacts (customers and unsubscribed)
-        const customers = withEmail.filter((c) => c.deal_status === 'closed_won').length;
-        const unsubscribed = withEmail.filter((c) => c.has_unsubscribed).length;
-        setExcludedCount({ customers, unsubscribed });
-
-        // Auto-exclude customers (closed_won) and unsubscribed contacts
-        const eligible = withEmail.filter((contact) => contact.deal_status !== 'closed_won' && !contact.has_unsubscribed);
+        // Only include contacts with email and exclude unsubscribed
+        const eligible = result.filter((contact) => Boolean(contact.email) && !contact.has_unsubscribed);
 
         setFilteredContacts(eligible);
     }, [data.filter_criteria, contacts]);
@@ -427,23 +416,23 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
                                         </Select>
                                     </div>
 
-                                    {/* Deal Status Filter */}
+                                    {/* Deal Status Exclusion Filter */}
                                     <div>
-                                        <Label className="mb-2 block">Deal Status</Label>
+                                        <Label className="mb-2 block">Exclude Deal Statuses</Label>
                                         <div className="space-y-2">
-                                            {['none', 'contacted', 'responded', 'in_progress', 'closed_won', 'closed_lost'].map((status) => (
+                                            {DEAL_STATUSES.map((status) => (
                                                 <div key={status} className="flex items-center space-x-2">
                                                     <Checkbox
                                                         id={`status_${status}`}
-                                                        checked={data.filter_criteria.deal_status.includes(status)}
+                                                        checked={data.filter_criteria.exclude_deal_status.includes(status)}
                                                         onCheckedChange={(checked) => {
                                                             const newStatuses = checked
-                                                                ? [...data.filter_criteria.deal_status, status]
-                                                                : data.filter_criteria.deal_status.filter((s) => s !== status);
+                                                                ? [...data.filter_criteria.exclude_deal_status, status]
+                                                                : data.filter_criteria.exclude_deal_status.filter((s) => s !== status);
 
                                                             setData('filter_criteria', {
                                                                 ...data.filter_criteria,
-                                                                deal_status: newStatuses,
+                                                                exclude_deal_status: newStatuses,
                                                             });
                                                         }}
                                                     />
@@ -492,14 +481,6 @@ export default function CampaignCreate({ companies, contacts }: CampaignCreatePr
                                                 ? 'No contacts match your current filters. Adjust the filters to include recipients.'
                                                 : `${filteredContacts.length} contacts will receive this campaign.`}
                                         </div>
-                                        {(excludedCount.customers > 0 || excludedCount.unsubscribed > 0) && (
-                                            <div className="mt-2 text-xs text-amber-600">
-                                                {excludedCount.customers + excludedCount.unsubscribed} contacts excluded
-                                                {excludedCount.customers > 0 && ` (${excludedCount.customers} customers)`}
-                                                {excludedCount.unsubscribed > 0 && ` (${excludedCount.unsubscribed} unsubscribed)`}
-                                            </div>
-                                        )}
-
                                         {/* Show contact names */}
                                         <div className="mt-3 text-xs">
                                             <div className="font-medium">Selected contacts:</div>

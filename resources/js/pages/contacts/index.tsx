@@ -1,12 +1,16 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DEAL_STATUSES, dealStatusBadgeColors, dealStatusIcons, dealStatusLabels } from '@/constants/deal-status';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Building2, CheckCircle, Edit, FilterIcon, Mail, MessageCircle, Trash2, X, XCircle } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Building2, Edit, FilterIcon, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
+import type { DealStatus } from '@/constants/deal-status';
 
 interface Company {
     id: number;
@@ -25,7 +29,7 @@ interface Contact {
     job_title: string | null;
     job_title_category: string | null;
     has_been_contacted: boolean;
-    deal_status: 'none' | 'contacted' | 'responded' | 'in_progress' | 'closed_won' | 'closed_lost';
+    deal_status: DealStatus;
     created_at: string;
     updated_at: string;
     company: Company;
@@ -44,6 +48,7 @@ interface ContactsIndexProps {
         deal_status?: string;
         job_title?: string;
         job_title_category?: string;
+        has_email?: string;
     };
 }
 
@@ -123,6 +128,20 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
         );
     };
 
+    const handleEmailFilterChange = (value: string) => {
+        router.get(
+            route('contacts.index'),
+            {
+                ...filters,
+                has_email: value === 'all' ? null : value,
+            },
+            {
+                preserveState: true,
+                replace: true,
+            },
+        );
+    };
+
     // Handle contact deletion
     const handleDelete = (contact: Contact) => {
         if (confirm(`Are you sure you want to delete ${contact.first_name} ${contact.last_name}? This action cannot be undone.`)) {
@@ -152,13 +171,9 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
             let bVal: string | null = null;
 
             switch (sortKey) {
-                case 'first_name':
-                    aVal = (a.first_name || '').toLowerCase();
-                    bVal = (b.first_name || '').toLowerCase();
-                    break;
-                case 'last_name':
-                    aVal = (a.last_name || '').toLowerCase();
-                    bVal = (b.last_name || '').toLowerCase();
+                case 'name':
+                    aVal = `${a.last_name || ''} ${a.first_name || ''}`.toLowerCase();
+                    bVal = `${b.last_name || ''} ${b.first_name || ''}`.toLowerCase();
                     break;
                 case 'email':
                     aVal = (a.email || '').toLowerCase();
@@ -212,6 +227,9 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                                 'All Contacts'
                             )}
                         </h1>
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-sm font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                            {contacts.length}
+                        </span>
                         {filters.company_id && (
                             <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800 dark:bg-blue-800/30 dark:text-blue-400">
                                 Filtered
@@ -234,7 +252,7 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                             <h2 className="text-sm font-medium">Filters</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                             {/* Company Filter */}
                             <div className="space-y-2">
                                 <label htmlFor="company-filter" className="text-sm font-medium">
@@ -306,18 +324,34 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="contacted">Contacted</SelectItem>
-                                        <SelectItem value="responded">Responded</SelectItem>
-                                        <SelectItem value="in_progress">In Progress</SelectItem>
-                                        <SelectItem value="closed_won">Closed (Won)</SelectItem>
-                                        <SelectItem value="closed_lost">Closed (Lost)</SelectItem>
+                                        {DEAL_STATUSES.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {dealStatusLabels[status]}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
 
+                            {/* Email Filter */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Email</label>
+                                <RadioGroup value={filters.has_email || 'all'} onValueChange={handleEmailFilterChange} className="flex gap-4 pt-1">
+                                    {[
+                                        { value: 'all', label: 'All' },
+                                        { value: 'with', label: 'With' },
+                                        { value: 'without', label: 'Without' },
+                                    ].map((option) => (
+                                        <label key={option.value} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                                            <RadioGroupItem value={option.value} />
+                                            {option.label}
+                                        </label>
+                                    ))}
+                                </RadioGroup>
+                            </div>
+
                             {/* Reset filters button - only show when filters are active */}
-                            {(filters.company_id || filters.deal_status || filters.job_title || filters.job_title_category) && (
+                            {(filters.company_id || filters.deal_status || filters.job_title || filters.job_title_category || filters.has_email) && (
                                 <div className="flex items-end">
                                     <Button
                                         variant="outline"
@@ -341,18 +375,10 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                                 <tr className="border-b bg-neutral-50 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
                                     <th
                                         className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('first_name')}
+                                        onClick={() => toggleSort('name')}
                                     >
                                         <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="first_name" /> First Name
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('last_name')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="last_name" /> Last Name
+                                            <SortIcon columnKey="name" /> Name
                                         </span>
                                     </th>
                                     <th
@@ -417,8 +443,7 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                             <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                                 {sortedContacts.map((contact) => (
                                     <tr key={contact.id} className="hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">{contact.first_name}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.last_name}</td>
+                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">{contact.first_name} {contact.last_name}</td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                                             {contact.email ? (
                                                 <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
@@ -453,32 +478,10 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                                             </Link>
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {/* Deal status badge with appropriate color */}
                                             {(() => {
-                                                // Define badge colors based on deal status
-                                                const statusColors: Record<string, string> = {
-                                                    none: 'bg-gray-100 text-gray-800',
-                                                    contacted: 'bg-blue-100 text-blue-800',
-                                                    responded: 'bg-purple-100 text-purple-800',
-                                                    in_progress: 'bg-yellow-100 text-yellow-800',
-                                                    closed_won: 'bg-green-100 text-green-800',
-                                                    closed_lost: 'bg-red-100 text-red-800',
-                                                };
-
-                                                // Define icons based on deal status
-                                                const statusIcons: Record<string, any> = {
-                                                    none: null,
-                                                    contacted: Mail,
-                                                    responded: MessageCircle,
-                                                    in_progress: null,
-                                                    closed_won: CheckCircle,
-                                                    closed_lost: XCircle,
-                                                };
-
-                                                const Icon = statusIcons[contact.deal_status];
-
+                                                const Icon = dealStatusIcons[contact.deal_status];
                                                 return (
-                                                    <Badge className={statusColors[contact.deal_status]}>
+                                                    <Badge className={dealStatusBadgeColors[contact.deal_status]}>
                                                         {Icon && <Icon size={12} className="mr-1" />}
                                                         <span className="capitalize">{contact.deal_status.replace('_', ' ')}</span>
                                                     </Badge>
@@ -508,7 +511,7 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
 
                                 {contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan={10} className="px-4 py-6 text-center text-neutral-500">
+                                        <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
                                             No contacts found
                                         </td>
                                     </tr>

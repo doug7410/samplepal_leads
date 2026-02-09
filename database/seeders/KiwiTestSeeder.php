@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\DealStatus;
 use App\Models\Company;
 use App\Models\Contact;
 use Illuminate\Database\Seeder;
@@ -39,7 +40,7 @@ class KiwiTestSeeder extends Seeder
             'office_phone' => '(415) 555-8977',
             'job_title' => 'Chief Technology Officer',
             'has_been_contacted' => false,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
             'notes' => 'Doug is the CTO and founder of Kiwi Tech Lab. He\'s interested in exploring lighting solutions for their new office building.',
             'relevance_score' => 80,
         ]);
@@ -53,7 +54,7 @@ class KiwiTestSeeder extends Seeder
             'office_phone' => '(415) 555-8978',
             'job_title' => 'Head of Operations',
             'has_been_contacted' => false,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
             'notes' => 'Angela oversees all operations and facilities. She\'s the main decision maker for office improvements.',
             'relevance_score' => 90,
         ]);
@@ -67,7 +68,7 @@ class KiwiTestSeeder extends Seeder
             'office_phone' => '(415) 555-8979',
             'job_title' => 'Lead Engineer',
             'has_been_contacted' => false,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
             'notes' => 'Michael leads the engineering team and has expressed interest in smart lighting systems.',
             'relevance_score' => 75,
         ]);

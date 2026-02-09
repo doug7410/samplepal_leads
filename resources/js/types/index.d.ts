@@ -1,3 +1,4 @@
+import type { DealStatus } from '@/constants/deal-status';
 import { LucideIcon } from 'lucide-react';
 import type { Config } from 'ziggy-js';
 
@@ -59,7 +60,7 @@ export interface Contact {
     job_title_category: 'Principal' | 'Sales' | 'Operations' | 'Project Manager' | 'Other' | null;
     has_been_contacted: boolean;
     has_unsubscribed: boolean;
-    deal_status: 'none' | 'contacted' | 'responded' | 'in_progress' | 'closed_won' | 'closed_lost';
+    deal_status: DealStatus;
     notes: string | null;
     relevance_score: number | null;
     created_at: string;

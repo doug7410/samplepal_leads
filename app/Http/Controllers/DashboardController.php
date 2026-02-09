@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DealStatus;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
@@ -59,7 +60,7 @@ class DashboardController extends Controller
         $needsFollowUp = Contact::whereHas('company', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })
-            ->where('deal_status', 'contacted')
+            ->where('deal_status', DealStatus::Contacted)
             ->where('has_unsubscribed', false)
             ->count();
 
@@ -67,7 +68,7 @@ class DashboardController extends Controller
         $availableLeads = Contact::whereHas('company', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })
-            ->where('deal_status', 'none')
+            ->where('deal_status', DealStatus::None)
             ->where('has_unsubscribed', false)
             ->whereNotNull('email')
             ->count();

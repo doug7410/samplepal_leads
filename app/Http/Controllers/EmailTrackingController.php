@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DealStatus;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Contact;
@@ -272,11 +273,11 @@ class EmailTrackingController extends Controller
 
             // Update contact deal status for opened/clicked if not already in a more advanced state
             if (in_array($eventType, ['opened', 'clicked']) &&
-                $contact->deal_status === 'none' &&
+                $contact->deal_status === DealStatus::None &&
                 ! $contact->has_been_contacted) {
 
                 $contact->has_been_contacted = true;
-                $contact->deal_status = 'contacted';
+                $contact->deal_status = DealStatus::Contacted;
                 $contact->save();
             }
         } catch (\Exception $e) {

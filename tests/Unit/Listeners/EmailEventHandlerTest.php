@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Listeners;
 
+use App\Enums\DealStatus;
 use App\Listeners\EmailEventHandler;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
@@ -43,7 +44,7 @@ class EmailEventHandlerTest extends TestCase
             'last_name' => 'Doe',
             'email' => 'john.doe@example.com',
             'has_been_contacted' => false,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
         ]);
 
         $this->campaignContact = CampaignContact::create([

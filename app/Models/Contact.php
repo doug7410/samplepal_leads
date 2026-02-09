@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DealStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,25 +40,16 @@ class Contact extends Model
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'has_been_contacted' => 'boolean',
-        'has_unsubscribed' => 'boolean',
-        'unsubscribed_at' => 'datetime',
-        'is_enrichment_unusable' => 'boolean',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'has_been_contacted' => 'boolean',
+            'has_unsubscribed' => 'boolean',
+            'unsubscribed_at' => 'datetime',
+            'is_enrichment_unusable' => 'boolean',
+            'deal_status' => DealStatus::class,
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

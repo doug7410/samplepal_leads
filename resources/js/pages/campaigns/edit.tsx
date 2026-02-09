@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DEAL_STATUSES } from '@/constants/deal-status';
 import WysiwygEditor from '@/components/wysiwyg-editor';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Campaign, type Company, type Contact } from '@/types';
@@ -55,7 +56,7 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
         filter_criteria: campaign.filter_criteria || {
             company_id: null as number | null,
             relevance_min: null as number | null,
-            deal_status: [] as string[],
+            exclude_deal_status: [] as string[],
             job_title: '' as string,
             job_title_category: null as string | null,
         },
@@ -85,9 +86,9 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
             result = result.filter((contact) => (contact.relevance_score || 0) >= (data.filter_criteria.relevance_min || 0));
         }
 
-        // Apply deal status filter
-        if (data.filter_criteria.deal_status.length > 0) {
-            result = result.filter((contact) => data.filter_criteria.deal_status.includes(contact.deal_status));
+        // Apply deal status exclusion filter
+        if (data.filter_criteria.exclude_deal_status?.length > 0) {
+            result = result.filter((contact) => !data.filter_criteria.exclude_deal_status.includes(contact.deal_status));
         }
 
         // Apply job title category filter
@@ -436,24 +437,24 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                                         </Select>
                                     </div>
 
-                                    {/* Deal Status Filter */}
+                                    {/* Deal Status Exclusion Filter */}
                                     <div>
-                                        <Label className="mb-2 block">Deal Status</Label>
+                                        <Label className="mb-2 block">Exclude Deal Statuses</Label>
                                         <div className="space-y-2">
-                                            {['none', 'contacted', 'responded', 'in_progress', 'closed_won', 'closed_lost'].map((status) => (
+                                            {DEAL_STATUSES.map((status) => (
                                                 <div key={status} className="flex items-center space-x-2">
                                                     <Checkbox
                                                         id={`status_${status}`}
-                                                        checked={data.filter_criteria.deal_status?.includes(status) || false}
+                                                        checked={data.filter_criteria.exclude_deal_status?.includes(status) || false}
                                                         onCheckedChange={(checked) => {
-                                                            const statuses = data.filter_criteria.deal_status || [];
+                                                            const statuses = data.filter_criteria.exclude_deal_status || [];
                                                             const newStatuses = checked
                                                                 ? [...statuses, status]
                                                                 : statuses.filter((s) => s !== status);
 
                                                             setData('filter_criteria', {
                                                                 ...data.filter_criteria,
-                                                                deal_status: newStatuses,
+                                                                exclude_deal_status: newStatuses,
                                                             });
                                                         }}
                                                     />

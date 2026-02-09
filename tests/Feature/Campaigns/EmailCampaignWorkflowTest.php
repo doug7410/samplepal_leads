@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Campaigns;
 
+use App\Enums\DealStatus;
 use App\Jobs\ProcessCampaignJob;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
@@ -53,13 +54,13 @@ class EmailCampaignWorkflowTest extends TestCase
         $this->contacts1 = Contact::factory()->count(5)->create([
             'company_id' => $this->company1->id,
             'relevance_score' => 8,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
         ]);
 
         $this->contacts2 = Contact::factory()->count(5)->create([
             'company_id' => $this->company2->id,
             'relevance_score' => 6,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
         ]);
 
         // Create a campaign service

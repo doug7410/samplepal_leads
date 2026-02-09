@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Http\Controllers;
 
+use App\Enums\DealStatus;
 use App\Http\Controllers\EmailTrackingController;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
@@ -48,7 +49,7 @@ class EmailTrackingControllerTest extends TestCase
             'last_name' => 'Doe',
             'email' => 'john.doe@example.com',
             'has_been_contacted' => false,
-            'deal_status' => 'none',
+            'deal_status' => DealStatus::None,
         ]);
 
         $this->campaignContact = CampaignContact::create([

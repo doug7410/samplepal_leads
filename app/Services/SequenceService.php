@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DealStatus;
 use App\Jobs\SendSequenceEmailJob;
 use App\Models\Contact;
 use App\Models\Sequence;
@@ -81,7 +82,7 @@ class SequenceService
             $contacts = Contact::whereIn('id', $contactIds)
                 ->whereNotNull('email')
                 ->where('has_unsubscribed', false)
-                ->where('deal_status', '!=', 'closed_won')
+                ->where('deal_status', '!=', DealStatus::ClosedWon)
                 ->whereNotIn('id', function ($query) use ($sequence) {
                     $query->select('contact_id')
                         ->from('sequence_contacts')
@@ -150,7 +151,7 @@ class SequenceService
     {
         $contact = $sequenceContact->contact;
 
-        if ($contact->deal_status === 'closed_won') {
+        if ($contact->deal_status === DealStatus::ClosedWon) {
             return SequenceContact::EXIT_REASON_CONVERTED;
         }
 

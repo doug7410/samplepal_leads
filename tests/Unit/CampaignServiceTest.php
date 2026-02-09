@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DealStatus;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Models\Company;
@@ -90,26 +91,26 @@ it('can add contacts to a campaign based on filter criteria', function () {
     Contact::factory()->create([
         'company_id' => $acuityCompany->id,
         'relevance_score' => 8,
-        'deal_status' => 'contacted',
+        'deal_status' => DealStatus::Contacted,
     ]);
 
     Contact::factory()->create([
         'company_id' => $acuityCompany->id,
         'relevance_score' => 3,
-        'deal_status' => 'none',
+        'deal_status' => DealStatus::None,
     ]);
 
     Contact::factory()->create([
         'company_id' => $cooperCompany->id,
         'relevance_score' => 9,
-        'deal_status' => 'responded',
+        'deal_status' => DealStatus::Responded,
     ]);
 
-    // Filter for Acuity contacts with relevance score >= 5
+    // Filter for Acuity contacts with relevance score >= 5, excluding 'none'
     $filterCriteria = [
         'company_id' => $acuityCompany->id,
         'relevance_min' => 5,
-        'deal_status' => ['contacted', 'responded'],
+        'exclude_deal_status' => [DealStatus::None->value],
     ];
 
     $addedCount = $this->campaignService->addContactsFromFilter($campaign, $filterCriteria);
@@ -129,11 +130,33 @@ it('can add contacts to a campaign based on filter criteria', function () {
     ]);
 });
 
+it('excludes contacts by deal status using exclude_deal_status filter', function () {
+    $campaign = Campaign::factory()->create();
+    $company = Company::factory()->create();
+
+    $contacted = Contact::factory()->create(['company_id' => $company->id, 'deal_status' => DealStatus::Contacted]);
+    $closedWon = Contact::factory()->create(['company_id' => $company->id, 'deal_status' => DealStatus::ClosedWon]);
+    $none = Contact::factory()->create(['company_id' => $company->id, 'deal_status' => DealStatus::None]);
+
+    $filterCriteria = [
+        'exclude_deal_status' => [DealStatus::ClosedWon->value],
+    ];
+
+    $addedCount = $this->campaignService->addContactsFromFilter($campaign, $filterCriteria);
+
+    expect($addedCount)->toBe(2);
+
+    $campaign->refresh();
+    $addedIds = $campaign->contacts->pluck('id')->toArray();
+    expect($addedIds)->toContain($contacted->id, $none->id)
+        ->and($addedIds)->not->toContain($closedWon->id);
+});
+
 it('can add specific contacts to a campaign', function () {
     $campaign = Campaign::factory()->create();
-    $contact1 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
-    $contact2 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
-    $contact3 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact1 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
+    $contact2 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
+    $contact3 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
 
     $contactIds = [$contact1->id, $contact3->id];
 
@@ -162,9 +185,9 @@ it('can add specific contacts to a campaign', function () {
 
 it('can remove contacts from a campaign', function () {
     $campaign = Campaign::factory()->create();
-    $contact1 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
-    $contact2 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
-    $contact3 = Contact::factory()->create(['deal_status' => 'none', 'has_unsubscribed' => false]);
+    $contact1 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
+    $contact2 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
+    $contact3 = Contact::factory()->create(['deal_status' => DealStatus::None, 'has_unsubscribed' => false]);
 
     // Add all contacts
     $this->campaignService->addContacts($campaign, [$contact1->id, $contact2->id, $contact3->id]);

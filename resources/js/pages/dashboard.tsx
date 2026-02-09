@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { dealStatusColors, dealStatusLabels } from '@/constants/deal-status';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
@@ -23,24 +24,6 @@ interface DashboardProps {
     needsFollowUp: number;
     availableLeads: number;
 }
-
-const dealStatusLabels: Record<string, string> = {
-    none: 'New Leads',
-    contacted: 'Contacted',
-    responded: 'Responded',
-    in_progress: 'In Progress',
-    closed_won: 'Customers',
-    closed_lost: 'Lost',
-};
-
-const dealStatusColors: Record<string, string> = {
-    none: 'bg-gray-100 text-gray-700',
-    contacted: 'bg-blue-100 text-blue-700',
-    responded: 'bg-purple-100 text-purple-700',
-    in_progress: 'bg-yellow-100 text-yellow-700',
-    closed_won: 'bg-green-100 text-green-700',
-    closed_lost: 'bg-red-100 text-red-700',
-};
 
 export default function Dashboard({ stats, pipeline, needsFollowUp, availableLeads }: DashboardProps) {
     const totalContacts = Object.values(pipeline).reduce((a, b) => a + b, 0);
