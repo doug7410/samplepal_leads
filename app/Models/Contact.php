@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class Contact extends Model
         'first_name',
         'last_name',
         'email',
+        'email_source',
         'cell_phone',
         'office_phone',
         'job_title',
@@ -33,6 +35,7 @@ class Contact extends Model
         'deal_status',
         'notes',
         'relevance_score',
+        'is_enrichment_unusable',
     ];
 
     /**
@@ -44,6 +47,7 @@ class Contact extends Model
         'has_been_contacted' => 'boolean',
         'has_unsubscribed' => 'boolean',
         'unsubscribed_at' => 'datetime',
+        'is_enrichment_unusable' => 'boolean',
     ];
 
     /**
@@ -57,6 +61,14 @@ class Contact extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @param  Builder<Contact>  $query
+     */
+    public function scopeUsable(Builder $query): void
+    {
+        $query->where('is_enrichment_unusable', false);
     }
 
     /**

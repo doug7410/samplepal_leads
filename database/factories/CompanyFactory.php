@@ -28,6 +28,8 @@ class CompanyFactory extends Factory
             'country' => fake()->country(),
             'email' => fake()->companyEmail(),
             'website' => fake()->url(),
+            'website_status' => null,
+            'website_checked_at' => null,
             'contact_name' => fake()->name(),
             'contact_phone' => fake()->phoneNumber(),
             'contact_email' => fake()->safeEmail(),

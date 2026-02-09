@@ -35,6 +35,8 @@ class Company extends Model
         'country',
         'email',
         'website',
+        'website_status',
+        'website_checked_at',
         'contact_name',
         'contact_phone',
         'contact_email',
@@ -50,6 +52,7 @@ class Company extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'website_checked_at' => 'datetime',
         ];
     }
 
