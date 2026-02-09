@@ -24,3 +24,5 @@ yarn-error.log
 /.zed
 
 **/.claude/settings.local.json
+*.dump
+/stubs
