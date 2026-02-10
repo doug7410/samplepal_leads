@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
 
     // Contact routes
     Route::get('contacts', [ContactController::class, 'index'])->name('contacts.index');

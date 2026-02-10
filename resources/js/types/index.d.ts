@@ -47,6 +47,7 @@ export interface Company {
     id: number;
     company_name: string;
     website: string | null;
+    deleted_at: string | null;
 }
 
 export interface Contact {

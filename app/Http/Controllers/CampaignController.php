@@ -54,7 +54,7 @@ class CampaignController extends Controller
     public function create(): Response
     {
         $companies = \App\Models\Company::has('contacts')->orderBy('company_name')->get();
-        $contacts = \App\Models\Contact::with('company')->get();
+        $contacts = \App\Models\Contact::with('company')->whereHas('company')->get();
 
         return Inertia::render('campaigns/create', [
             'companies' => $companies,
@@ -117,7 +117,12 @@ class CampaignController extends Controller
      */
     public function show(Campaign $campaign): Response
     {
-        $campaign->load(['campaignContacts' => fn ($q) => $q->whereHas('contact'), 'campaignContacts.contact.company', 'segments', 'companies']);
+        $campaign->load([
+            'campaignContacts' => fn ($q) => $q->whereHas('contact'),
+            'campaignContacts.contact' => fn ($q) => $q->with(['company' => fn ($cq) => $cq->withTrashed()]),
+            'segments',
+            'companies',
+        ]);
 
         $statistics = $this->campaignService->getStatistics($campaign);
 

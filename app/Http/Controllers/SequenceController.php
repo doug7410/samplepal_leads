@@ -46,6 +46,7 @@ class SequenceController extends Controller
     {
         $companies = Company::has('contacts')->orderBy('company_name')->get();
         $contacts = Contact::with('company')
+            ->whereHas('company')
             ->whereNotNull('email')
             ->where('has_unsubscribed', false)
             ->where('deal_status', '!=', DealStatus::ClosedWon)
@@ -105,6 +106,7 @@ class SequenceController extends Controller
 
         $companies = Company::has('contacts')->orderBy('company_name')->get();
         $contacts = Contact::with('company')
+            ->whereHas('company')
             ->whereNotNull('email')
             ->where('has_unsubscribed', false)
             ->where('deal_status', '!=', DealStatus::ClosedWon)

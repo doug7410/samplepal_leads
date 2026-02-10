@@ -972,6 +972,9 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                 >
                                                     {cc.contact.company?.company_name || '-'}
                                                 </Link>
+                                                {cc.contact.company?.deleted_at && (
+                                                    <Badge className="ml-1 bg-red-100 text-red-800">Deleted</Badge>
+                                                )}
                                             </td>
                                         )}
                                         {isVisible('job_title') && (

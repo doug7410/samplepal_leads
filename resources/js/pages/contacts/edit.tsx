@@ -23,6 +23,7 @@ interface Contact {
     email: string | null;
     phone: string | null;
     job_title: string | null;
+    job_title_category: 'Principal' | 'Sales' | 'Operations' | 'Project Manager' | 'Other' | null;
     has_been_contacted: boolean;
     notes: string | null;
     company: Company;
@@ -43,6 +44,7 @@ export default function ContactEdit({ contact, companies, errors = {} }: Contact
         email: contact.email || '',
         phone: contact.phone || '',
         job_title: contact.job_title || '',
+        job_title_category: contact.job_title_category || '',
         has_been_contacted: contact.has_been_contacted,
         notes: contact.notes || '',
     });
@@ -161,10 +163,33 @@ export default function ContactEdit({ contact, companies, errors = {} }: Contact
                                 {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
                             </div>
 
-                            <div className="space-y-2 md:col-span-2">
+                            <div className="space-y-2">
                                 <Label htmlFor="job_title">Job Title</Label>
                                 <Input id="job_title" name="job_title" value={formData.job_title} onChange={handleInputChange} />
                                 {errors.job_title && <p className="text-sm text-red-500">{errors.job_title}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="job_title_category">Job Category</Label>
+                                <Select
+                                    value={formData.job_title_category || 'none'}
+                                    onValueChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, job_title_category: value === 'none' ? '' : value }))
+                                    }
+                                >
+                                    <SelectTrigger id="job_title_category">
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
+                                        <SelectItem value="Principal">Principal</SelectItem>
+                                        <SelectItem value="Sales">Sales</SelectItem>
+                                        <SelectItem value="Operations">Operations</SelectItem>
+                                        <SelectItem value="Project Manager">Project Manager</SelectItem>
+                                        <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.job_title_category && <p className="text-sm text-red-500">{errors.job_title_category}</p>}
                             </div>
 
                             <div className="md:col-span-2">

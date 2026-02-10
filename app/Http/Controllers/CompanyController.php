@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,7 +14,7 @@ class CompanyController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Company::withCount('contacts');
+        $query = Company::withTrashed()->withCount('contacts');
 
         // Apply company name search filter if provided - case insensitive
         if ($request->has('search') && ! empty($request->search)) {
@@ -49,13 +50,13 @@ class CompanyController extends Controller
         $companies = $query->paginate($perPage)->withQueryString();
 
         // Get unique cities and states for filter dropdowns
-        $cities = Company::distinct('city_or_region')
+        $cities = Company::withTrashed()->distinct('city_or_region')
             ->whereNotNull('city_or_region')
             ->pluck('city_or_region')
             ->sort()
             ->values();
 
-        $states = Company::distinct('state')
+        $states = Company::withTrashed()->distinct('state')
             ->whereNotNull('state')
             ->pluck('state')
             ->sort()
@@ -77,5 +78,15 @@ class CompanyController extends Controller
                 'direction' => $sortDirection,
             ],
         ]);
+    }
+
+    /**
+     * Remove the specified company from storage (soft delete).
+     */
+    public function destroy(Company $company): RedirectResponse
+    {
+        $company->delete();
+
+        return redirect()->back();
     }
 }

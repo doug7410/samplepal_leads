@@ -14,7 +14,7 @@ class ContactController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Contact::with('company');
+        $query = Contact::with(['company' => fn ($q) => $q->withTrashed()]);
 
         if ($request->filled('company_id')) {
             $query->where('company_id', $request->company_id);
@@ -115,7 +115,7 @@ class ContactController extends Controller
      */
     public function edit($id)
     {
-        $contact = Contact::with('company')->findOrFail($id);
+        $contact = Contact::with(['company' => fn ($q) => $q->withTrashed()])->findOrFail($id);
         $companies = Company::orderBy('company_name')->get(['id', 'company_name']);
 
         return Inertia::render('contacts/edit', [
@@ -139,6 +139,7 @@ class ContactController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'job_title' => 'nullable|string|max:255',
+            'job_title_category' => 'nullable|string|in:Principal,Sales,Operations,Project Manager,Other',
             'has_been_contacted' => 'boolean',
             'notes' => 'nullable|string',
         ]);

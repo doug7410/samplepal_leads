@@ -80,6 +80,7 @@ class SequenceService
     {
         return DB::transaction(function () use ($sequence, $contactIds) {
             $contacts = Contact::whereIn('id', $contactIds)
+                ->whereHas('company')
                 ->whereNotNull('email')
                 ->where('has_unsubscribed', false)
                 ->where('deal_status', '!=', DealStatus::ClosedWon)

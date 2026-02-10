@@ -1,11 +1,12 @@
 import { CompanyFilters } from '@/components/companies/company-filters';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, UserPlus, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Trash2, UserPlus, Users } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface Company {
@@ -19,6 +20,7 @@ interface Company {
     email: string | null;
     website: string | null;
     contacts_count: number;
+    deleted_at: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -192,12 +194,30 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
                                 {companies.data.map((company) => (
                                     <tr key={company.id} className="hover:bg-neutral-100 dark:hover:bg-neutral-800">
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <Button size="sm" variant="ghost" className="flex items-center gap-1" asChild>
-                                                <Link href={route('contacts.create', { company_id: company.id })}>
-                                                    <UserPlus size={16} />
-                                                    <span>Add Contact</span>
-                                                </Link>
-                                            </Button>
+                                            <div className="flex items-center gap-1">
+                                                {!company.deleted_at && (
+                                                    <>
+                                                        <Button size="sm" variant="ghost" className="flex items-center gap-1" asChild>
+                                                            <Link href={route('contacts.create', { company_id: company.id })}>
+                                                                <UserPlus size={16} />
+                                                                <span>Add Contact</span>
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-red-600 hover:text-red-700"
+                                                            onClick={() => {
+                                                                if (confirm(`Delete "${company.company_name}"? Contacts from this company will be excluded from future campaigns.`)) {
+                                                                    router.delete(route('companies.destroy', { company: company.id }));
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-center text-sm font-medium whitespace-nowrap">
                                             <Link
@@ -209,7 +229,10 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
                                             </Link>
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap capitalize">{company.manufacturer}</td>
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">{toTitleCase(company.company_name)}</td>
+                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                                            {toTitleCase(company.company_name)}
+                                            {company.deleted_at && <Badge className="ml-1 bg-red-100 text-red-800">Deleted</Badge>}
+                                        </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                                             {company.city_or_region ? toTitleCase(company.city_or_region) : '-'}
                                         </td>

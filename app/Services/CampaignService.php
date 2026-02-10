@@ -68,7 +68,8 @@ class CampaignService
                 $query->whereNotIn('deal_status', (array) $filterCriteria['exclude_deal_status']);
             }
 
-            $query->whereNotNull('email')
+            $query->whereHas('company')
+                ->whereNotNull('email')
                 ->where('has_unsubscribed', false)
                 ->whereNotIn('id', function ($subquery) use ($campaign) {
                     $subquery->select('contact_id')
@@ -107,6 +108,7 @@ class CampaignService
     {
         return DB::transaction(function () use ($campaign, $contactIds) {
             $contacts = Contact::whereIn('id', $contactIds)
+                ->whereHas('company')
                 ->whereNotNull('email')
                 ->where('has_unsubscribed', false)
                 ->whereNotIn('id', function ($query) use ($campaign) {

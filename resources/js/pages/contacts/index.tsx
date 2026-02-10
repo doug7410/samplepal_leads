@@ -1,9 +1,11 @@
+import { ColumnToggle } from '@/components/column-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEAL_STATUSES, dealStatusBadgeColors, dealStatusIcons, dealStatusLabels } from '@/constants/deal-status';
+import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -16,6 +18,7 @@ interface Company {
     id: number;
     company_name: string;
     website: string | null;
+    deleted_at: string | null;
 }
 
 interface Contact {
@@ -66,6 +69,32 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function ContactsIndex({ contacts, companies, jobTitles, jobCategories, filters }: ContactsIndexProps) {
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+    const toggleableColumns = useMemo(
+        () => [
+            { key: 'name', label: 'Name' },
+            { key: 'email', label: 'Email' },
+            { key: 'website', label: 'Website', defaultVisible: false },
+            { key: 'phone', label: 'Phone' },
+            { key: 'job_title', label: 'Job Title' },
+            { key: 'job_category', label: 'Job Category', defaultVisible: false },
+            { key: 'company', label: 'Company' },
+            { key: 'deal_status', label: 'Deal Status' },
+        ],
+        [],
+    );
+
+    const {
+        visibleKeys,
+        isVisible,
+        toggle,
+        columns: columnDefs,
+    } = useColumnVisibility({
+        storageKey: 'contacts-index-columns',
+        columns: toggleableColumns,
+    });
+
+    const visibleColumnCount = useMemo(() => columnDefs.filter((c) => isVisible(c.key)).length, [columnDefs, isVisible]);
 
     // Determine company name if we're filtering by company
     const companyName = filters.company_id && contacts.length > 0 ? contacts[0].company.company_name : null;
@@ -236,12 +265,15 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                             </div>
                         )}
                     </div>
-                    <Button asChild>
-                        <Link href={route('companies.index')} className="flex items-center gap-1">
-                            <Building2 size={16} />
-                            <span>View Companies</span>
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <ColumnToggle columns={columnDefs} visibleKeys={visibleKeys} onToggle={toggle} />
+                        <Button asChild>
+                            <Link href={route('companies.index')} className="flex items-center gap-1">
+                                <Building2 size={16} />
+                                <span>View Companies</span>
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -373,121 +405,99 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b bg-neutral-50 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800">
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('name')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="name" /> Name
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('email')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="email" /> Email
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('website')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="website" /> Website
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('phone')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="phone" /> Phone
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('job_title')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="job_title" /> Job Title
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('job_category')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="job_category" /> Job Category
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('company')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="company" /> Company
-                                        </span>
-                                    </th>
-                                    <th
-                                        className="cursor-pointer px-4 py-3 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        onClick={() => toggleSort('deal_status')}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <SortIcon columnKey="deal_status" /> Deal Status
-                                        </span>
-                                    </th>
+                                    {columnDefs
+                                        .filter((col) => isVisible(col.key))
+                                        .map((col) => (
+                                            <th
+                                                key={col.key}
+                                                className="cursor-pointer px-4 py-3 select-none hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                onClick={() => toggleSort(col.key)}
+                                            >
+                                                <span className="inline-flex items-center gap-1">
+                                                    {col.label}
+                                                    <SortIcon columnKey={col.key} />
+                                                </span>
+                                            </th>
+                                        ))}
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                                 {sortedContacts.map((contact) => (
                                     <tr key={contact.id} className="hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">{contact.first_name} {contact.last_name}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {contact.email ? (
-                                                <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
-                                                    {contact.email}
-                                                </a>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {contact.company?.website ? (
-                                                <a
-                                                    href={contact.company.website.startsWith('http') ? contact.company.website : `https://${contact.company.website}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                        {isVisible('name') && (
+                                            <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                                                {contact.first_name} {contact.last_name}
+                                            </td>
+                                        )}
+                                        {isVisible('email') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {contact.email ? (
+                                                    <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
+                                                        {contact.email}
+                                                    </a>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                        )}
+                                        {isVisible('website') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {contact.company?.website ? (
+                                                    <a
+                                                        href={
+                                                            contact.company.website.startsWith('http')
+                                                                ? contact.company.website
+                                                                : `https://${contact.company.website}`
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline dark:text-blue-400"
+                                                    >
+                                                        {contact.company.website.replace(/^https?:\/\//, '')}
+                                                    </a>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                        )}
+                                        {isVisible('phone') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {contact.cell_phone ? contact.cell_phone.split(' EXT')[0].split(' x')[0].split(' ext')[0] : '-'}
+                                            </td>
+                                        )}
+                                        {isVisible('job_title') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title || '-'}</td>
+                                        )}
+                                        {isVisible('job_category') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title_category || '-'}</td>
+                                        )}
+                                        {isVisible('company') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                <Link
+                                                    href={route('contacts.index', { company_id: contact.company_id })}
                                                     className="text-blue-600 hover:underline dark:text-blue-400"
                                                 >
-                                                    {contact.company.website.replace(/^https?:\/\//, '')}
-                                                </a>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {contact.cell_phone ? contact.cell_phone.split(' EXT')[0].split(' x')[0].split(' ext')[0] : '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title || '-'}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{contact.job_title_category || '-'}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            <Link href={route('contacts.index', { company_id: contact.company_id })} className="text-blue-600 hover:underline dark:text-blue-400">
-                                                {contact.company?.company_name || '-'}
-                                            </Link>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {(() => {
-                                                const Icon = dealStatusIcons[contact.deal_status];
-                                                return (
-                                                    <Badge className={dealStatusBadgeColors[contact.deal_status]}>
-                                                        {Icon && <Icon size={12} className="mr-1" />}
-                                                        <span className="capitalize">{contact.deal_status.replace('_', ' ')}</span>
-                                                    </Badge>
-                                                );
-                                            })()}
-                                        </td>
+                                                    {contact.company?.company_name || '-'}
+                                                </Link>
+                                                {contact.company?.deleted_at && (
+                                                    <Badge className="ml-1 bg-red-100 text-red-800">Deleted</Badge>
+                                                )}
+                                            </td>
+                                        )}
+                                        {isVisible('deal_status') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {(() => {
+                                                    const Icon = dealStatusIcons[contact.deal_status];
+                                                    return (
+                                                        <Badge className={dealStatusBadgeColors[contact.deal_status]}>
+                                                            {Icon && <Icon size={12} className="mr-1" />}
+                                                            <span className="capitalize">{contact.deal_status.replace('_', ' ')}</span>
+                                                        </Badge>
+                                                    );
+                                                })()}
+                                            </td>
+                                        )}
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <Link href={route('contacts.edit', { id: contact.id })}>
@@ -511,7 +521,7 @@ export default function ContactsIndex({ contacts, companies, jobTitles, jobCateg
 
                                 {contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
+                                        <td colSpan={visibleColumnCount + 1} className="px-4 py-6 text-center text-neutral-500">
                                             No contacts found
                                         </td>
                                     </tr>
