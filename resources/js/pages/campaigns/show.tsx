@@ -967,7 +967,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                         {isVisible('company') && (
                                             <td className="px-4 py-3 text-sm whitespace-nowrap">
                                                 <Link
-                                                    href={route('contacts.index', { company_id: cc.contact.company_id })}
+                                                    href={route('companies.index', { search: cc.contact.company?.company_name })}
                                                     className="text-blue-600 hover:underline dark:text-blue-400"
                                                 >
                                                     {cc.contact.company?.company_name || '-'}
