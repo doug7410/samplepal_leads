@@ -96,7 +96,7 @@ export default function SequenceEdit({ sequence, companies, contacts }: Sequence
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setProcessing(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         router.put(
             route('sequences.update', { sequence: sequence.id }),
             {

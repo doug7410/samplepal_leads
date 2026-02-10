@@ -210,7 +210,15 @@ export default function CampaignsIndex({ campaigns, filters }: CampaignsIndexPro
                                     {campaign.status && campaign.status === 'draft' && (
                                         <Button
                                             size="sm"
-                                            onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
+                                            onClick={() => {
+                                                if (
+                                                    confirm(
+                                                        'Are you sure you want to send this campaign now? This will begin sending emails immediately.',
+                                                    )
+                                                ) {
+                                                    router.post(route('campaigns.send', { campaign: campaign.id }));
+                                                }
+                                            }}
                                             className="flex items-center gap-1"
                                         >
                                             <Send size={14} />
@@ -221,7 +229,15 @@ export default function CampaignsIndex({ campaigns, filters }: CampaignsIndexPro
                                     {campaign.status && campaign.status === 'scheduled' && (
                                         <Button
                                             size="sm"
-                                            onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
+                                            onClick={() => {
+                                                if (
+                                                    confirm(
+                                                        'Are you sure you want to send this campaign now? This will begin sending emails immediately.',
+                                                    )
+                                                ) {
+                                                    router.post(route('campaigns.send', { campaign: campaign.id }));
+                                                }
+                                            }}
                                             className="flex items-center gap-1"
                                         >
                                             <Send size={14} />

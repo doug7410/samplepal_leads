@@ -86,7 +86,7 @@ export default function SequenceCreate({ companies, contacts }: SequenceCreatePr
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setProcessing(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         router.post(
             route('sequences.store'),
             {
