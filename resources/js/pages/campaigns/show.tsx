@@ -1,3 +1,4 @@
+import { ColumnToggle } from '@/components/column-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Campaign, type CampaignContact, type CampaignSegment, type SegmentStatistics } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -88,6 +90,34 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
     const hasSegments = campaign.segments && campaign.segments.length > 0;
     const allSegmentsDraft = hasSegments && campaign.segments!.every((s) => s.status === 'draft');
     const segmentsSentCount = hasSegments ? campaign.segments!.filter((s) => s.status === 'completed' || s.status === 'failed').length : 0;
+
+    const toggleableColumns = useMemo(
+        () => [
+            { key: 'name', label: 'Name' },
+            { key: 'email', label: 'Email' },
+            { key: 'website', label: 'Website', defaultVisible: false },
+            { key: 'company', label: 'Company' },
+            { key: 'job_title', label: 'Job Title' },
+            { key: 'category', label: 'Category', defaultVisible: false },
+            ...(hasSegments ? [{ key: 'segment', label: 'Segment' }] : []),
+            { key: 'status', label: 'Status' },
+            { key: 'sent', label: 'Sent' },
+            { key: 'clicked', label: 'Clicked', defaultVisible: false },
+        ],
+        [hasSegments],
+    );
+
+    const {
+        visibleKeys,
+        isVisible,
+        toggle,
+        columns: columnDefs,
+    } = useColumnVisibility({
+        storageKey: 'campaign-show-columns',
+        columns: toggleableColumns,
+    });
+
+    const visibleColumnCount = useMemo(() => columnDefs.filter((c) => isVisible(c.key)).length, [columnDefs, isVisible]);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -308,7 +338,11 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                 </Dialog>
                                 <Button
                                     size="sm"
-                                    onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
+                                    onClick={() => {
+                                        if (confirm('Are you sure you want to send this campaign now? This will begin sending emails immediately.')) {
+                                            router.post(route('campaigns.send', { campaign: campaign.id }));
+                                        }
+                                    }}
                                     className="flex items-center gap-1"
                                     disabled={
                                         campaign.type === 'contact' ? statistics.total === 0 : !campaign.companies || campaign.companies.length === 0
@@ -333,7 +367,11 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                             <>
                                 <Button
                                     size="sm"
-                                    onClick={() => router.post(route('campaigns.send', { campaign: campaign.id }))}
+                                    onClick={() => {
+                                        if (confirm('Are you sure you want to send this campaign now? This will begin sending emails immediately.')) {
+                                            router.post(route('campaigns.send', { campaign: campaign.id }));
+                                        }
+                                    }}
                                     className="flex items-center gap-1"
                                 >
                                     <Send size={14} />
@@ -722,14 +760,20 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                         </Button>
                                                         <Button
                                                             size="sm"
-                                                            onClick={() =>
-                                                                router.post(
-                                                                    route('campaigns.segments.send', {
-                                                                        campaign: campaign.id,
-                                                                        segment: segment.id,
-                                                                    }),
-                                                                )
-                                                            }
+                                                            onClick={() => {
+                                                                if (
+                                                                    confirm(
+                                                                        'Are you sure you want to send this segment now? This will begin sending emails immediately.',
+                                                                    )
+                                                                ) {
+                                                                    router.post(
+                                                                        route('campaigns.segments.send', {
+                                                                            campaign: campaign.id,
+                                                                            segment: segment.id,
+                                                                        }),
+                                                                    );
+                                                                }
+                                                            }}
                                                         >
                                                             <Send size={12} />
                                                             <span className="ml-1">Send</span>
@@ -816,24 +860,27 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                 <Card className="p-5">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">Campaign Recipients</h2>
-                        {selectedIds.length > 0 && (
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-600">{selectedIds.length} selected</span>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                        if (confirm(`Remove ${selectedIds.length} contact(s) from the campaign?`)) {
-                                            removeContacts(selectedIds);
-                                        }
-                                    }}
-                                    className="flex items-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
-                                >
-                                    <Trash2 size={14} />
-                                    <span>Remove Selected</span>
-                                </Button>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-3">
+                            {selectedIds.length > 0 && (
+                                <>
+                                    <span className="text-sm text-gray-600">{selectedIds.length} selected</span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            if (confirm(`Remove ${selectedIds.length} contact(s) from the campaign?`)) {
+                                                removeContacts(selectedIds);
+                                            }
+                                        }}
+                                        className="flex items-center gap-1 border-red-600 text-red-600 hover:bg-red-50"
+                                    >
+                                        <Trash2 size={14} />
+                                        <span>Remove Selected</span>
+                                    </Button>
+                                </>
+                            )}
+                            <ColumnToggle columns={columnDefs} visibleKeys={visibleKeys} onToggle={toggle} />
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -849,29 +896,20 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                             />
                                         )}
                                     </th>
-                                    {[
-                                        { key: 'name', label: 'Name' },
-                                        { key: 'email', label: 'Email' },
-                                        { key: 'website', label: 'Website' },
-                                        { key: 'company', label: 'Company' },
-                                        { key: 'job_title', label: 'Job Title' },
-                                        { key: 'category', label: 'Category' },
-                                        ...(hasSegments ? [{ key: 'segment', label: 'Segment' }] : []),
-                                        { key: 'status', label: 'Status' },
-                                        { key: 'sent', label: 'Sent' },
-                                        { key: 'clicked', label: 'Clicked' },
-                                    ].map((col) => (
-                                        <th
-                                            key={col.key}
-                                            className="cursor-pointer px-4 py-3 select-none hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            onClick={() => toggleSort(col.key)}
-                                        >
-                                            <span className="inline-flex items-center gap-1">
-                                                {col.label}
-                                                <SortIcon columnKey={col.key} />
-                                            </span>
-                                        </th>
-                                    ))}
+                                    {columnDefs
+                                        .filter((col) => isVisible(col.key))
+                                        .map((col) => (
+                                            <th
+                                                key={col.key}
+                                                className="cursor-pointer px-4 py-3 select-none hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                onClick={() => toggleSort(col.key)}
+                                            >
+                                                <span className="inline-flex items-center gap-1">
+                                                    {col.label}
+                                                    <SortIcon columnKey={col.key} />
+                                                </span>
+                                            </th>
+                                        ))}
                                     <th className="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
@@ -887,55 +925,83 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                 />
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
-                                            {cc.contact.first_name} {cc.contact.last_name}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {cc.contact.email ? (
-                                                <a href={`mailto:${cc.contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
-                                                    {cc.contact.email}
-                                                </a>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {cc.contact.company?.website ? (
-                                                <a
-                                                    href={cc.contact.company.website.startsWith('http') ? cc.contact.company.website : `https://${cc.contact.company.website}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                        {isVisible('name') && (
+                                            <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                                                {cc.contact.first_name} {cc.contact.last_name}
+                                            </td>
+                                        )}
+                                        {isVisible('email') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {cc.contact.email ? (
+                                                    <a
+                                                        href={`mailto:${cc.contact.email}`}
+                                                        className="text-blue-600 hover:underline dark:text-blue-400"
+                                                    >
+                                                        {cc.contact.email}
+                                                    </a>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                        )}
+                                        {isVisible('website') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {cc.contact.company?.website ? (
+                                                    <a
+                                                        href={
+                                                            cc.contact.company.website.startsWith('http')
+                                                                ? cc.contact.company.website
+                                                                : `https://${cc.contact.company.website}`
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline dark:text-blue-400"
+                                                    >
+                                                        {cc.contact.company.website.replace(/^https?:\/\//, '')}
+                                                    </a>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                        )}
+                                        {isVisible('company') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                <Link
+                                                    href={route('contacts.index', { company_id: cc.contact.company_id })}
                                                     className="text-blue-600 hover:underline dark:text-blue-400"
                                                 >
-                                                    {cc.contact.company.website.replace(/^https?:\/\//, '')}
-                                                </a>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            <Link href={route('contacts.index', { company_id: cc.contact.company_id })} className="text-blue-600 hover:underline dark:text-blue-400">
-                                                {cc.contact.company?.company_name || '-'}
-                                            </Link>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title || '-'}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title_category || '-'}</td>
-                                        {hasSegments && (
+                                                    {cc.contact.company?.company_name || '-'}
+                                                </Link>
+                                            </td>
+                                        )}
+                                        {isVisible('job_title') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title || '-'}</td>
+                                        )}
+                                        {isVisible('category') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">{cc.contact.job_title_category || '-'}</td>
+                                        )}
+                                        {isVisible('segment') && hasSegments && (
                                             <td className="px-4 py-3 text-sm whitespace-nowrap">{getSegmentName(cc.campaign_segment_id)}</td>
                                         )}
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            <Badge
-                                                className={`${contactStatusColors[cc.status]?.bg || 'bg-gray-100'} ${contactStatusColors[cc.status]?.text || 'text-gray-800'}`}
-                                            >
-                                                {cc.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {cc.sent_at ? new Date(cc.sent_at).toLocaleString() : '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                            {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
-                                        </td>
+                                        {isVisible('status') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                <Badge
+                                                    className={`${contactStatusColors[cc.status]?.bg || 'bg-gray-100'} ${contactStatusColors[cc.status]?.text || 'text-gray-800'}`}
+                                                >
+                                                    {cc.status}
+                                                </Badge>
+                                            </td>
+                                        )}
+                                        {isVisible('sent') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {cc.sent_at ? new Date(cc.sent_at).toLocaleString() : '-'}
+                                            </td>
+                                        )}
+                                        {isVisible('clicked') && (
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                                {cc.clicked_at ? new Date(cc.clicked_at).toLocaleString() : '-'}
+                                            </td>
+                                        )}
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -945,9 +1011,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={() => router.visit(route('contacts.edit', { id: cc.contact.id }))}
-                                                    >
+                                                    <DropdownMenuItem onClick={() => router.visit(route('contacts.edit', { id: cc.contact.id }))}>
                                                         Edit Contact
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -983,7 +1047,7 @@ export default function CampaignShow({ campaign, statistics, segmentStatistics }
 
                                 {campaign.campaign_contacts.length === 0 && (
                                     <tr>
-                                        <td colSpan={hasSegments ? 12 : 11} className="px-4 py-6 text-center text-neutral-500">
+                                        <td colSpan={visibleColumnCount + 2} className="px-4 py-6 text-center text-neutral-500">
                                             No recipients added to this campaign yet
                                         </td>
                                     </tr>
