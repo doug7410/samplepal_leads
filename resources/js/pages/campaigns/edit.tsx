@@ -74,39 +74,45 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
 
     // Apply filters when filter criteria changes
     useEffect(() => {
+        const hasActiveFilter =
+            data.filter_criteria.company_id ||
+            data.filter_criteria.relevance_min ||
+            (data.filter_criteria.exclude_deal_status?.length ?? 0) > 0 ||
+            data.filter_criteria.job_title_category ||
+            data.filter_criteria.job_title;
+
+        if (!hasActiveFilter) {
+            setFilteredContacts(selectedContacts || []);
+            return;
+        }
+
         let result = [...contacts];
 
-        // Apply company filter
         if (data.filter_criteria.company_id) {
             result = result.filter((contact) => contact.company_id === data.filter_criteria.company_id);
         }
 
-        // Apply relevance score filter
         if (data.filter_criteria.relevance_min) {
             result = result.filter((contact) => (contact.relevance_score || 0) >= (data.filter_criteria.relevance_min || 0));
         }
 
-        // Apply deal status exclusion filter
         if (data.filter_criteria.exclude_deal_status?.length > 0) {
             result = result.filter((contact) => !data.filter_criteria.exclude_deal_status.includes(contact.deal_status));
         }
 
-        // Apply job title category filter
         if (data.filter_criteria.job_title_category) {
             result = result.filter((contact) => contact.job_title_category === data.filter_criteria.job_title_category);
         }
 
-        // Apply job title filter
         if (data.filter_criteria.job_title) {
             const search = data.filter_criteria.job_title.toLowerCase();
             result = result.filter((contact) => contact.job_title?.toLowerCase().includes(search));
         }
 
-        // Only include contacts with email
         result = result.filter((contact) => !!contact.email);
 
         setFilteredContacts(result);
-    }, [data.filter_criteria, contacts]);
+    }, [data.filter_criteria, contacts, selectedContacts]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
