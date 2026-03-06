@@ -185,6 +185,82 @@ class EmailTrackingControllerTest extends TestCase
         $this->assertEquals(403, $response->getStatusCode());
     }
 
+    public function test_track_click_records_clicked_event()
+    {
+        Config::set('services.email_tracking.click_token', 'test-token');
+        $ref = $this->campaign->id.'_'.$this->contact->id;
+
+        $request = Request::create('/email/track-click', 'GET', ['ref' => $ref]);
+        $request->headers->set('X-Tracking-Token', 'test-token');
+
+        $response = $this->controller->trackClick($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $this->assertDatabaseHas('email_events', [
+            'campaign_id' => $this->campaign->id,
+            'contact_id' => $this->contact->id,
+            'event_type' => 'clicked',
+        ]);
+
+        $this->campaignContact->refresh();
+        $this->assertEquals('clicked', $this->campaignContact->status);
+        $this->assertNotNull($this->campaignContact->clicked_at);
+    }
+
+    public function test_track_click_returns_401_for_missing_token()
+    {
+        Config::set('services.email_tracking.click_token', 'test-token');
+        $ref = $this->campaign->id.'_'.$this->contact->id;
+
+        $request = Request::create('/email/track-click', 'GET', ['ref' => $ref]);
+
+        $response = $this->controller->trackClick($request);
+
+        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertDatabaseCount('email_events', 0);
+    }
+
+    public function test_track_click_returns_401_for_wrong_token()
+    {
+        Config::set('services.email_tracking.click_token', 'test-token');
+        $ref = $this->campaign->id.'_'.$this->contact->id;
+
+        $request = Request::create('/email/track-click', 'GET', ['ref' => $ref]);
+        $request->headers->set('X-Tracking-Token', 'wrong-token');
+
+        $response = $this->controller->trackClick($request);
+
+        $this->assertEquals(401, $response->getStatusCode());
+        $this->assertDatabaseCount('email_events', 0);
+    }
+
+    public function test_track_click_returns_400_for_invalid_ref()
+    {
+        Config::set('services.email_tracking.click_token', 'test-token');
+
+        $request = Request::create('/email/track-click', 'GET', ['ref' => 'bad-ref']);
+        $request->headers->set('X-Tracking-Token', 'test-token');
+
+        $response = $this->controller->trackClick($request);
+
+        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertDatabaseCount('email_events', 0);
+    }
+
+    public function test_track_click_returns_404_for_unknown_ids()
+    {
+        Config::set('services.email_tracking.click_token', 'test-token');
+
+        $request = Request::create('/email/track-click', 'GET', ['ref' => '99999_99999']);
+        $request->headers->set('X-Tracking-Token', 'test-token');
+
+        $response = $this->controller->trackClick($request);
+
+        $this->assertEquals(404, $response->getStatusCode());
+        $this->assertDatabaseCount('email_events', 0);
+    }
+
     public function test_handle_webhook_handles_invalid_payload()
     {
         // Create a request with an invalid payload (missing 'type')

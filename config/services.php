@@ -35,6 +35,10 @@ return [
         'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
     ],
 
+    'email_tracking' => [
+        'click_token' => env('EMAIL_TRACKING_CLICK_TOKEN'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

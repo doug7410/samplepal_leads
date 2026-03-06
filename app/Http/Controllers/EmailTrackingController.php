@@ -286,6 +286,37 @@ class EmailTrackingController extends Controller
     }
 
     /**
+     * Handle a link click tracked via ?ref={campaign_id}_{contact_id}.
+     */
+    public function trackClick(Request $request): Response
+    {
+        $token = config('services.email_tracking.click_token');
+        if ($token && $request->header('X-Tracking-Token') !== $token) {
+            return response('Unauthorized', 401);
+        }
+
+        $ref = $request->query('ref');
+
+        if (! $ref || ! preg_match('/^(\d+)_(\d+)$/', $ref, $matches)) {
+            return response('Invalid ref', 400);
+        }
+
+        $campaignId = (int) $matches[1];
+        $contactId = (int) $matches[2];
+
+        $campaign = Campaign::find($campaignId);
+        $contact = Contact::find($contactId);
+
+        if (! $campaign || ! $contact) {
+            return response('Not found', 404);
+        }
+
+        $this->recordEvent($campaign, $contact, 'clicked', $request);
+
+        return response('OK', 200);
+    }
+
+    /**
      * Process unsubscribe request.
      */
     public function unsubscribe(Request $request, Campaign $campaign, Contact $contact)

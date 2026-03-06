@@ -58,6 +58,11 @@ Route::withoutMiddleware(['auth', 'web'])
     ->post('email/webhook', [App\Http\Controllers\EmailTrackingController::class, 'handleWebhook'])
     ->name('email.webhook');
 
+// Track link clicks via ?ref={campaign_id}_{contact_id}
+Route::withoutMiddleware(['auth', 'web'])
+    ->get('email/track-click', [App\Http\Controllers\EmailTrackingController::class, 'trackClick'])
+    ->name('email.track-click');
+
 // Unsubscribe route - should be accessible without authentication
 Route::get('email/unsubscribe/{campaign}/{contact}', [App\Http\Controllers\EmailTrackingController::class, 'unsubscribe'])
     ->name('email.unsubscribe');
