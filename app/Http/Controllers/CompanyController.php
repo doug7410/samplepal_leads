@@ -6,6 +6,7 @@ use App\Models\Company;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CompanyController extends Controller
 {
@@ -78,6 +79,37 @@ class CompanyController extends Controller
                 'direction' => $sortDirection,
             ],
         ]);
+    }
+
+    /**
+     * Show the form for creating a new company.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('companies/create');
+    }
+
+    /**
+     * Store a newly created company in storage.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'manufacturer' => 'nullable|string|max:255',
+            'company_phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'website' => 'nullable|string|max:255',
+            'address_line_1' => 'nullable|string|max:255',
+            'address_line_2' => 'nullable|string|max:255',
+            'city_or_region' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
+        ]);
+
+        $company = Company::create($validated);
+
+        return redirect()->route('companies.index')->with('success', 'Company created successfully.');
     }
 
     /**

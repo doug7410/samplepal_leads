@@ -6,7 +6,7 @@ import { Pagination } from '@/components/ui/pagination';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Trash2, UserPlus, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2, UserPlus, Users } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface Company {
@@ -151,7 +151,15 @@ export default function CompaniesIndex({ companies, filters, filterOptions, sort
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Companies" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                <h1 className="text-2xl font-bold">Companies</h1>
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">Companies</h1>
+                    <Button asChild>
+                        <Link href={route('companies.create')}>
+                            <Plus size={16} />
+                            <span>Add Company</span>
+                        </Link>
+                    </Button>
+                </div>
 
                 <CompanyFilters initialFilters={initialFilters} filterOptions={memoizedFilterOptions} />
 

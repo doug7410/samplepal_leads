@@ -50,7 +50,7 @@ class SequenceMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
-            text: $this->plainText ?: null,
+            textString: $this->plainText ?: null,
         );
     }
 
