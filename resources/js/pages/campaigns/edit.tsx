@@ -4,15 +4,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WysiwygEditor from '@/components/wysiwyg-editor';
-import { DEAL_STATUSES } from '@/constants/deal-status';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Campaign, type Company, type Contact } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Building, Calendar, ChevronLeft, Save, Trash, User, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface CampaignEditProps {
     campaign: Campaign;
@@ -53,93 +51,41 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
         from_name: campaign.from_name || '',
         reply_to: campaign.reply_to || '',
         type: campaign.type || 'contact',
-        filter_criteria: campaign.filter_criteria || {
-            company_id: null as number | null,
-            relevance_min: null as number | null,
-            exclude_deal_status: [] as string[],
-            job_title: '' as string,
-            job_title_category: null as string | null,
-        },
         contact_ids: selectedContacts?.map((c) => c.id) || [],
         company_ids: selectedCompanies?.map((c) => c.id) || [],
         schedule_campaign: !!campaign.scheduled_at,
         scheduled_at: campaign.scheduled_at ? new Date(campaign.scheduled_at).toISOString().slice(0, 16) : '',
     });
 
-    // State for filtered contacts based on filter criteria
-    const [filteredContacts, setFilteredContacts] = useState<Contact[]>(selectedContacts || []);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // Unique job titles for autocomplete
-    const jobTitles = [...new Set(contacts.map((c) => c.job_title).filter(Boolean) as string[])].sort();
-
-    // Apply filters when filter criteria changes
-    useEffect(() => {
-        const hasActiveFilter =
-            data.filter_criteria.company_id ||
-            data.filter_criteria.relevance_min ||
-            (data.filter_criteria.exclude_deal_status?.length ?? 0) > 0 ||
-            data.filter_criteria.job_title_category ||
-            data.filter_criteria.job_title;
-
-        if (!hasActiveFilter) {
-            setFilteredContacts(selectedContacts || []);
-            return;
-        }
-
-        let result = [...contacts];
-
-        if (data.filter_criteria.company_id) {
-            result = result.filter((contact) => contact.company_id === data.filter_criteria.company_id);
-        }
-
-        if (data.filter_criteria.relevance_min) {
-            result = result.filter((contact) => (contact.relevance_score || 0) >= (data.filter_criteria.relevance_min || 0));
-        }
-
-        if (data.filter_criteria.exclude_deal_status?.length > 0) {
-            result = result.filter((contact) => !data.filter_criteria.exclude_deal_status.includes(contact.deal_status));
-        }
-
-        if (data.filter_criteria.job_title_category) {
-            result = result.filter((contact) => contact.job_title_category === data.filter_criteria.job_title_category);
-        }
-
-        if (data.filter_criteria.job_title) {
-            const search = data.filter_criteria.job_title.toLowerCase();
-            result = result.filter((contact) => contact.job_title?.toLowerCase().includes(search));
-        }
-
-        result = result.filter((contact) => !!contact.email);
-
-        setFilteredContacts(result);
-    }, [data.filter_criteria, contacts, selectedContacts]);
+    const visibleContacts = useMemo(() => {
+        const eligible = contacts.filter((c) => Boolean(c.email) && !c.has_unsubscribed);
+        if (!searchQuery.trim()) return eligible;
+        const q = searchQuery.toLowerCase();
+        return eligible.filter((c) => {
+            const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+            const company = c.company?.company_name?.toLowerCase() ?? '';
+            return fullName.includes(q) || company.includes(q);
+        });
+    }, [contacts, searchQuery]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate based on campaign type
         if (data.type === 'contact') {
-            const contactIds = filteredContacts.map((c) => c.id);
-
-            if (contactIds.length === 0) {
+            if (data.contact_ids.length === 0) {
                 alert('You need to select at least one contact for this campaign');
                 return;
             }
-
-            // Use router.put directly with the correct data
-            router.put(route('campaigns.update', { campaign: campaign.id }), {
-                ...data,
-                contact_ids: contactIds,
-            });
         } else {
-            // For company campaigns
             if (data.company_ids.length === 0) {
                 alert('You need to select at least one company for this campaign');
                 return;
             }
-
-            router.put(route('campaigns.update', { campaign: campaign.id }), data);
         }
+
+        router.put(route('campaigns.update', { campaign: campaign.id }), data);
     };
 
     const handleDelete = () => {
@@ -385,168 +331,81 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
 
                             {/* For Contact-based campaigns */}
                             {data.type === 'contact' && (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-gray-600">
-                                        Select filters to determine which contacts will receive this campaign. Only contacts with valid email
-                                        addresses will be included.
-                                    </p>
+                                <div className="space-y-3">
+                                    <Input
+                                        type="text"
+                                        placeholder="Search by name or company..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
 
-                                    {/* Company Filter */}
-                                    <div>
-                                        <Label htmlFor="company_filter">Company</Label>
-                                        <Select
-                                            value={data.filter_criteria.company_id?.toString() || 'all'}
-                                            onValueChange={(value) =>
-                                                setData('filter_criteria', {
-                                                    ...data.filter_criteria,
-                                                    company_id: value && value !== 'all' ? parseInt(value) : null,
-                                                })
-                                            }
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setData('contact_ids', visibleContacts.map((c) => c.id))}
                                         >
-                                            <SelectTrigger id="company_filter">
-                                                <SelectValue placeholder="All Companies" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Companies</SelectItem>
-                                                {companies.map((company) => (
-                                                    <SelectItem key={company.id} value={company.id.toString()}>
-                                                        {company.company_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            Select All
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setData('contact_ids', [])}
+                                        >
+                                            Clear All
+                                        </Button>
                                     </div>
 
-                                    {/* Relevance Score Filter */}
-                                    <div>
-                                        <Label htmlFor="relevance_filter">Minimum Relevance Score</Label>
-                                        <Select
-                                            value={data.filter_criteria.relevance_min?.toString() || 'any'}
-                                            onValueChange={(value) =>
-                                                setData('filter_criteria', {
-                                                    ...data.filter_criteria,
-                                                    relevance_min: value && value !== 'any' ? parseInt(value) : null,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger id="relevance_filter">
-                                                <SelectValue placeholder="Any Score" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="any">Any Score</SelectItem>
-                                                <SelectItem value="20">20+ (Low)</SelectItem>
-                                                <SelectItem value="40">40+ (Medium)</SelectItem>
-                                                <SelectItem value="60">60+ (High)</SelectItem>
-                                                <SelectItem value="80">80+ (Very High)</SelectItem>
-                                                <SelectItem value="100">100 (Perfect Match)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {/* Deal Status Exclusion Filter */}
-                                    <div>
-                                        <Label className="mb-2 block">Exclude Deal Statuses</Label>
-                                        <div className="space-y-2">
-                                            {DEAL_STATUSES.map((status) => (
-                                                <div key={status} className="flex items-center space-x-2">
+                                    <div className="max-h-80 space-y-2 overflow-y-auto rounded-md border p-3">
+                                        {visibleContacts.length === 0 ? (
+                                            <div className="py-2 text-center text-sm text-gray-500">No contacts found</div>
+                                        ) : (
+                                            visibleContacts.map((contact) => (
+                                                <div key={contact.id} className="flex items-center space-x-2">
                                                     <Checkbox
-                                                        id={`status_${status}`}
-                                                        checked={data.filter_criteria.exclude_deal_status?.includes(status) || false}
+                                                        id={`contact_${contact.id}`}
+                                                        checked={data.contact_ids.includes(contact.id)}
                                                         onCheckedChange={(checked) => {
-                                                            const statuses = data.filter_criteria.exclude_deal_status || [];
-                                                            const newStatuses = checked
-                                                                ? [...statuses, status]
-                                                                : statuses.filter((s) => s !== status);
-
-                                                            setData('filter_criteria', {
-                                                                ...data.filter_criteria,
-                                                                exclude_deal_status: newStatuses,
-                                                            });
+                                                            const newIds = checked
+                                                                ? [...data.contact_ids, contact.id]
+                                                                : data.contact_ids.filter((id) => id !== contact.id);
+                                                            setData('contact_ids', newIds);
                                                         }}
                                                     />
-                                                    <Label htmlFor={`status_${status}`} className="text-sm capitalize">
-                                                        {status.replace('_', ' ')}
+                                                    <Label htmlFor={`contact_${contact.id}`} className="cursor-pointer text-sm">
+                                                        {contact.first_name} {contact.last_name}
+                                                        {contact.company && (
+                                                            <span className="ml-1 text-gray-500">{contact.company.company_name}</span>
+                                                        )}
                                                     </Label>
                                                 </div>
-                                            ))}
-                                        </div>
+                                            ))
+                                        )}
                                     </div>
 
-                                    {/* Job Title Category Filter */}
-                                    <div>
-                                        <Label htmlFor="job_title_category_filter">Job Title Category</Label>
-                                        <Select
-                                            value={data.filter_criteria.job_title_category || 'all'}
-                                            onValueChange={(value) =>
-                                                setData('filter_criteria', {
-                                                    ...data.filter_criteria,
-                                                    job_title_category: value && value !== 'all' ? value : null,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger id="job_title_category_filter">
-                                                <SelectValue placeholder="All Categories" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Categories</SelectItem>
-                                                <SelectItem value="Principal">Principal</SelectItem>
-                                                <SelectItem value="Sales">Sales</SelectItem>
-                                                <SelectItem value="Operations">Operations</SelectItem>
-                                                <SelectItem value="Project Manager">Project Manager</SelectItem>
-                                                <SelectItem value="Other">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {/* Job Title Filter */}
-                                    <div>
-                                        <Label htmlFor="job_title_filter">Job Title</Label>
-                                        <Input
-                                            id="job_title_filter"
-                                            type="text"
-                                            list="job-titles-list"
-                                            value={data.filter_criteria.job_title || ''}
-                                            onChange={(e) =>
-                                                setData('filter_criteria', {
-                                                    ...data.filter_criteria,
-                                                    job_title: e.target.value,
-                                                })
-                                            }
-                                            placeholder="Type to filter by job title..."
-                                        />
-                                        <datalist id="job-titles-list">
-                                            {jobTitles.map((title) => (
-                                                <option key={title} value={title} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-
-                                    {/* Contact Count */}
-                                    <div className="mt-6 rounded-md bg-gray-50 p-4">
+                                    <div className="rounded-md bg-gray-50 p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Users size={16} className="text-gray-500" />
-                                                <span className="font-medium">Recipients</span>
+                                                <span className="font-medium">Selected</span>
                                             </div>
-                                            <span className="font-semibold">{filteredContacts.length}</span>
+                                            <span className="font-semibold">{data.contact_ids.length}</span>
                                         </div>
-                                        <div className="mt-1 text-xs text-gray-500">
-                                            {filteredContacts.length === 0
-                                                ? 'No contacts match your current filters. Adjust the filters to include recipients.'
-                                                : `${filteredContacts.length} contacts will receive this campaign.`}
-                                        </div>
-
-                                        {/* Show contact names */}
-                                        {filteredContacts.length > 0 && (
+                                        {data.contact_ids.length > 0 && (
                                             <div className="mt-3 text-xs">
                                                 <div className="font-medium">Selected contacts:</div>
                                                 <ul className="list-disc pl-4">
-                                                    {filteredContacts.slice(0, 10).map((contact) => (
-                                                        <li key={contact.id}>
-                                                            {contact.first_name} {contact.last_name} - {contact.email || 'No email'}
-                                                        </li>
-                                                    ))}
-                                                    {filteredContacts.length > 10 && <li>...and {filteredContacts.length - 10} more</li>}
+                                                    {data.contact_ids.slice(0, 10).map((id) => {
+                                                        const contact = contacts.find((c) => c.id === id);
+                                                        return contact ? (
+                                                            <li key={id}>
+                                                                {contact.first_name} {contact.last_name}
+                                                            </li>
+                                                        ) : null;
+                                                    })}
+                                                    {data.contact_ids.length > 10 && <li>...and {data.contact_ids.length - 10} more</li>}
                                                 </ul>
                                             </div>
                                         )}
@@ -625,7 +484,7 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                                     type="submit"
                                     disabled={
                                         processing ||
-                                        (data.type === 'contact' && filteredContacts.length === 0) ||
+                                        (data.type === 'contact' && data.contact_ids.length === 0) ||
                                         (data.type === 'company' && data.company_ids.length === 0)
                                     }
                                     className="w-full"
@@ -633,7 +492,7 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                                     Save Changes
                                 </Button>
 
-                                {data.type === 'contact' && filteredContacts.length === 0 && (
+                                {data.type === 'contact' && data.contact_ids.length === 0 && (
                                     <div className="text-center text-xs text-amber-600">
                                         You need to select at least one recipient to update this campaign
                                     </div>
@@ -651,41 +510,24 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                                         onClick={(e) => {
                                             e.preventDefault();
 
-                                            if (data.type === 'contact') {
-                                                const contactIds = filteredContacts.map((c) => c.id);
-                                                if (contactIds.length === 0) {
-                                                    alert('You need to select at least one contact for this campaign');
-                                                    return;
-                                                }
-
-                                                router.put(
-                                                    route('campaigns.update', { campaign: campaign.id }),
-                                                    {
-                                                        ...data,
-                                                        contact_ids: contactIds,
-                                                    },
-                                                    {
-                                                        onSuccess: () => {
-                                                            router.visit(route('campaigns.show', { campaign: campaign.id }));
-                                                        },
-                                                    },
-                                                );
-                                            } else {
-                                                if (data.company_ids.length === 0) {
-                                                    alert('You need to select at least one company for this campaign');
-                                                    return;
-                                                }
-
-                                                router.put(route('campaigns.update', { campaign: campaign.id }), data, {
-                                                    onSuccess: () => {
-                                                        router.visit(route('campaigns.show', { campaign: campaign.id }));
-                                                    },
-                                                });
+                                            if (data.type === 'contact' && data.contact_ids.length === 0) {
+                                                alert('You need to select at least one contact for this campaign');
+                                                return;
                                             }
+                                            if (data.type === 'company' && data.company_ids.length === 0) {
+                                                alert('You need to select at least one company for this campaign');
+                                                return;
+                                            }
+
+                                            router.put(route('campaigns.update', { campaign: campaign.id }), data, {
+                                                onSuccess: () => {
+                                                    router.visit(route('campaigns.show', { campaign: campaign.id }));
+                                                },
+                                            });
                                         }}
                                         disabled={
                                             processing ||
-                                            (data.type === 'contact' && filteredContacts.length === 0) ||
+                                            (data.type === 'contact' && data.contact_ids.length === 0) ||
                                             (data.type === 'company' && data.company_ids.length === 0)
                                         }
                                         variant="outline"
@@ -699,41 +541,24 @@ export default function CampaignEdit({ campaign, companies, contacts, selectedCo
                                         onClick={(e) => {
                                             e.preventDefault();
 
-                                            if (data.type === 'contact') {
-                                                const contactIds = filteredContacts.map((c) => c.id);
-                                                if (contactIds.length === 0) {
-                                                    alert('You need to select at least one contact for this campaign');
-                                                    return;
-                                                }
-
-                                                router.put(
-                                                    route('campaigns.update', { campaign: campaign.id }),
-                                                    {
-                                                        ...data,
-                                                        contact_ids: contactIds,
-                                                    },
-                                                    {
-                                                        onSuccess: () => {
-                                                            router.visit(route('campaigns.show', { campaign: campaign.id }));
-                                                        },
-                                                    },
-                                                );
-                                            } else {
-                                                if (data.company_ids.length === 0) {
-                                                    alert('You need to select at least one company for this campaign');
-                                                    return;
-                                                }
-
-                                                router.put(route('campaigns.update', { campaign: campaign.id }), data, {
-                                                    onSuccess: () => {
-                                                        router.visit(route('campaigns.show', { campaign: campaign.id }));
-                                                    },
-                                                });
+                                            if (data.type === 'contact' && data.contact_ids.length === 0) {
+                                                alert('You need to select at least one contact for this campaign');
+                                                return;
                                             }
+                                            if (data.type === 'company' && data.company_ids.length === 0) {
+                                                alert('You need to select at least one company for this campaign');
+                                                return;
+                                            }
+
+                                            router.put(route('campaigns.update', { campaign: campaign.id }), data, {
+                                                onSuccess: () => {
+                                                    router.visit(route('campaigns.show', { campaign: campaign.id }));
+                                                },
+                                            });
                                         }}
                                         disabled={
                                             processing ||
-                                            (data.type === 'contact' && filteredContacts.length === 0) ||
+                                            (data.type === 'contact' && data.contact_ids.length === 0) ||
                                             (data.type === 'company' && data.company_ids.length === 0)
                                         }
                                         variant="secondary"
