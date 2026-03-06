@@ -50,8 +50,18 @@ class SequenceMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
-            textString: $this->plainText ?: null,
         );
+    }
+
+    public function build(): static
+    {
+        if ($this->plainText) {
+            $this->withSymfonyMessage(function ($message) {
+                $message->text($this->plainText);
+            });
+        }
+
+        return $this;
     }
 
     public function attachments(): array

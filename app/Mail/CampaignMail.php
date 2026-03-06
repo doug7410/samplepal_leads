@@ -55,8 +55,21 @@ class CampaignMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
-            textString: $this->plainText ?: null,
         );
+    }
+
+    /**
+     * Build the message.
+     */
+    public function build(): static
+    {
+        if ($this->plainText) {
+            $this->withSymfonyMessage(function ($message) {
+                $message->text($this->plainText);
+            });
+        }
+
+        return $this;
     }
 
     /**
