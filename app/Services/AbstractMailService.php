@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Decorators\EmailContent\EmailContentProcessorFactory;
 use App\Decorators\EmailContent\EmailContentProcessorInterface;
+use App\Helpers\HtmlToTextConverter;
 use App\Helpers\RecipientsFormatter;
 use App\Jobs\SendCampaignEmailJob;
 use App\Models\Campaign;
@@ -50,9 +51,10 @@ abstract class AbstractMailService implements MailServiceInterface
             $contentTemplate = ($segment?->content) ?? $campaign->content;
             $subject = $this->parseTemplate($subjectTemplate, $contact);
             $htmlBody = $this->contentProcessor->process($contentTemplate, $campaign, $contact);
+            $plainText = HtmlToTextConverter::convert($htmlBody);
 
             // 3. Perform the actual email delivery (implemented by concrete classes)
-            $messageId = $this->deliverEmail($campaign, $contact, $subject, $htmlBody, $options);
+            $messageId = $this->deliverEmail($campaign, $contact, $subject, $htmlBody, $plainText, $options);
 
             // 4. Update the campaign contact status based on delivery result
             if ($messageId) {
@@ -318,6 +320,7 @@ abstract class AbstractMailService implements MailServiceInterface
         Contact $contact,
         string $subject,
         string $htmlBody,
+        string $plainText,
         array $options
     ): ?string;
 }

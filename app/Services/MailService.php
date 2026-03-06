@@ -27,10 +27,11 @@ class MailService extends AbstractMailService
         Contact $contact,
         string $subject,
         string $htmlBody,
+        string $plainText,
         array $options
     ): ?string {
         // Create a new mailable instance with the processed content
-        $mailable = new CampaignMail($campaign, $contact, $htmlBody);
+        $mailable = new CampaignMail($campaign, $contact, $htmlBody, $plainText);
         $mailable->subject($subject);
 
         // Add the tracking headers to the email

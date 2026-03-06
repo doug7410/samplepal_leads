@@ -37,7 +37,7 @@ export default defineConfig({
             allowedHeaders: ['Content-Type', 'Authorization']
         },
         hmr: {
-            host: 'samplepal-leads.test'
+            host: 'localhost'
         },
     },
 });

@@ -158,6 +158,66 @@
     }
 }
 
+/* Tiptap / ProseMirror editor styles */
+.wysiwyg-editor .ProseMirror {
+    outline: none;
+    min-height: inherit;
+}
+
+.wysiwyg-editor .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    float: left;
+    pointer-events: none;
+    height: 0;
+}
+
+.wysiwyg-editor .ProseMirror h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+}
+
+.wysiwyg-editor .ProseMirror h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+}
+
+.wysiwyg-editor .ProseMirror ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.wysiwyg-editor .ProseMirror ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.wysiwyg-editor .ProseMirror blockquote {
+    border-left: 3px solid #e5e7eb;
+    padding-left: 1em;
+    color: #6b7280;
+    margin: 1em 0;
+}
+
+.wysiwyg-editor .ProseMirror p {
+    margin-bottom: 0.75em;
+}
+
+.wysiwyg-editor .ProseMirror a {
+    color: #2563eb;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.wysiwyg-editor .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+}
+
 /* Email content styling */
 .email-content {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

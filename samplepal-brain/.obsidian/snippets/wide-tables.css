@@ -1,0 +1,14 @@
+.markdown-preview-sizer {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+table {
+  width: 100%;
+  table-layout: auto;
+  white-space: normal;
+}
+
+td, th {
+  overflow-wrap: anywhere;
+}

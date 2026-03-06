@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Helpers\HtmlToTextConverter;
 use App\Jobs\Middleware\RateLimitEmailJobs;
 use App\Mail\SequenceMail;
 use App\Models\Sequence;
@@ -76,12 +77,14 @@ class SendSequenceEmailJob implements ShouldQueue
 
         try {
             $htmlContent = $this->parseTemplate($step->content, $contact);
+            $plainText = HtmlToTextConverter::convert($htmlContent);
 
             $mailable = new SequenceMail(
                 $sequence,
                 $step,
                 $contact,
-                $htmlContent
+                $htmlContent,
+                $plainText
             );
 
             $this->addTrackingHeaders($mailable, $sequence, $step, $contact);

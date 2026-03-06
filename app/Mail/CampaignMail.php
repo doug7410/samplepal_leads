@@ -21,7 +21,8 @@ class CampaignMail extends Mailable
     public function __construct(
         public Campaign $campaign,
         public Contact $contact,
-        public string $htmlContent
+        public string $htmlContent,
+        public string $plainText = ''
     ) {}
 
     /**
@@ -54,6 +55,7 @@ class CampaignMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
+            text: $this->plainText ?: null,
         );
     }
 

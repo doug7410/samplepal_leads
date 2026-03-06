@@ -21,6 +21,7 @@ class SequenceMail extends Mailable
         public SequenceStep $step,
         public Contact $contact,
         public string $htmlContent,
+        public string $plainText = '',
         public ?string $fromEmail = null,
         public ?string $fromName = null,
         public ?string $replyTo = null
@@ -49,6 +50,7 @@ class SequenceMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
+            text: $this->plainText ?: null,
         );
     }
 

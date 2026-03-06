@@ -16,6 +16,9 @@ class EmailContentProcessorFactory
         $processor = new HtmlSanitizerProcessor($processor);
 
         // Add the template variable processor
-        return new TemplateVariableProcessor($processor);
+        $processor = new TemplateVariableProcessor($processor);
+
+        // Add link tracking (must run after template variables are resolved)
+        return new LinkTrackingProcessor($processor);
     }
 }
